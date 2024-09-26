@@ -4,7 +4,7 @@ const { PublishersProvider } = require("./ui/tree");
 const SocketClient = require("./ws"); // assuming default export
 const { BlackScreenPanel } = require("./ui/bscreen");
 const { generateTimestamp, REPL } = require("./utils/helpers");
-const bridge = require("zenoh_socketio_bridge");
+// const bridge = require("zenoh_socketio_bridge");
 
 function activate(context) {
   let bridgeAddresses = [];
@@ -26,7 +26,7 @@ function activate(context) {
         prompt: "Remote Server you want to connect to",
       });
       if (address) {
-        bridge.start(`tcp/${address.split("://")[1]}:7447`);
+        // bridge.start(`tcp/${address.split("://")[1]}:7447`);
         vscode.window.showInformationMessage(`Connecting to ${address}...`);
         bridgeAddresses.push(address);
         BlackScreenPanel.createOrShow(context.extensionUri, ws);
@@ -51,21 +51,24 @@ function activate(context) {
         let event = state ? "subscribe" : "unsubscribe";
         ws.send("message", JSON.stringify({ event, key_expr }));
 
-        if (!subscriptions[key_expr]) {
-          subscriptions[key_expr] = (msg) => {
-            channels[treeArg].appendLine("");
-            channels[treeArg].appendLine(JSON.stringify(msg));
-          };
-          updateWs();
+        if (event == "subscribe") {
+          if (!subscriptions[key_expr]) {
+            subscriptions[key_expr] = (msg) => {
+              channels[treeArg].appendLine("");
+              channels[treeArg].appendLine(JSON.stringify(msg));
+            };
+            updateWs();
+          }
+        } else {
+          delete subscriptions[key_expr];
         }
 
         channels[treeArg].show();
-        if(key_expr === "scan"){
+        if (key_expr === "scan") {
           BlackScreenPanel.updateScan();
-        }else if(key_expr === "map_data"){
-          BlackScreenPanel.updateMap()
+        } else if (key_expr === "map") {
+          BlackScreenPanel.updateMap();
         }
-        
       }
     ),
     vscode.commands.registerCommand(

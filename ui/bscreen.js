@@ -60,16 +60,12 @@ class BlackScreenPanel {
 
   static updateMap() {
     if (BlackScreenPanel.currentPanel) {
-      let map_data;
-      this.socket.on("map_data", (data) => {
-        map_data = JSON.parse(data);
-      });
-      if (map_data) {
+      this.socket.on("map", (data) => {
         BlackScreenPanel.currentPanel._panel.webview.postMessage({
           command: "map_data",
           data: data,
         });
-      }
+      });
     }
   }
 
@@ -126,7 +122,7 @@ class BlackScreenPanel {
           let selectedTopics = {};
           let mapdata = {};
 
-          function convertRosMapFrameToCanvas (x:number,y:number,originX:number,originY:number,resolution:number){
+          function convertRosMapFrameToCanvas (x,y,originX,originY,resolution){
             const mx = -1 * (originX);
             const my = -1 * (originY);
             const canvasX = (x + mx) / resolution;
@@ -146,23 +142,23 @@ class BlackScreenPanel {
               switch (message.command) {
                 case 'map_data':
                   mapdata = message.data
-                  console.log("Map",mapdata);
-                  const canvasWidth = mapdata.width;
-                  const canvasHeight = mapdata.height;
-                  ctx.translate(canvasWidth / 2, canvasHeight / 2);
-                  const imageData = ctx.createImageData(mapdata.width,mapdata.height);
-                  const data = imageData.data;
-                  const pixels = mapdata.data;
-                  const maxval = 255;
+                  console.log("map data" + mapdata)
+                  canvas.width = mapdata?.width ?? 0;
+                  canvas.height = mapdata?.height ?? 0;
+                  ctx.translate(canvas.width / 2, canvas.height / 2);
+                  // const imageData = ctx.createImageData(mapdata.width,mapdata.height);
+                  // const data = imageData.data;
+                  // const pixels = mapdata.data;
+                  // const maxval = 255;
           
-                  for (let i = 0; i < pixels.length; i++) {
-                    const intensity = Math.round((pixels[i] / maxval) * 255);
-                    data[i * 4] = intensity;    // R
-                    data[i * 4 + 1] = intensity;// G
-                    data[i * 4 + 2] = intensity;// B
-                    data[i * 4 + 3] = 255;      // A
-                  }
-                  ctx.putImageData(imageData, 0, 0);
+                  // for (let i = 0; i < pixels.length; i++) {
+                  //   const intensity = Math.round((pixels[i] / maxval) * 255);
+                  //   data[i * 4] = intensity;    // R
+                  //   data[i * 4 + 1] = intensity;// G
+                  //   data[i * 4 + 2] = intensity;// B
+                  //   data[i * 4 + 3] = 255;      // A
+                  // }
+                  // ctx.putImageData(imageData, 0, 0);
                   break;
 
                 case 'scan_data':
@@ -175,8 +171,8 @@ class BlackScreenPanel {
 
                   ranges.forEach((dp, idx) => {
                     const angle = angle_min + (idx * angle_increment);
-                    const px =1 * ((dp * Math.cos(angle)) / mapdata.resolution) ;
-                    const py =-1 * ((dp * Math.sin(angle)) / mapdata.resolution);
+                    const px =1 * ((dp * Math.cos(angle)) / mapdata?.resolution) ;
+                    const py =-1 * ((dp * Math.sin(angle)) / mapdata?.resolution);
 
                     const width = 5;
                     const height = 5;
