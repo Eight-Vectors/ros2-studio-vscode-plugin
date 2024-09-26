@@ -1,0 +1,111 @@
+{
+  "name": "ros2-zenoh-plugin",
+  "displayName": "ros2-zenoh-plugin",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ros2-plugin.connect-bridge",
+        "title": "Connect to Remote"
+      },
+      {
+        "command": "ros2-plugin.refresh-connections",
+        "title": "Refresh connection",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "ros2-plugin.toggle-subscription",
+        "title": "Subscribe"
+      },
+      {
+        "command": "ros2-plugin.create-subscriber",
+        "title": "Create subscription"
+      },
+      {
+        "command": "ros2-plugin.publish-subscriber",
+        "title": "Run subscription"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "ros2-plugin.publish-subscriber",
+        "key": "ctrl+shift+k",
+        "when": "editorTextFocus"
+      }
+    ],
+    "viewsWelcome": [
+      {
+        "view": "nodes",
+        "contents": "[Connect](command:ros2-plugin.connect-bridge)"
+      },
+      {
+        "view": "subs",
+        "contents": "[Connect](command:ros2-plugin.connect-bridge)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "pluginView",
+          "title": "Ros2 Plugin",
+          "icon": "media/industrial-robot.svg"
+        }
+      ]
+    },
+    "views": {
+      "pluginView": [
+        {
+          "id": "nodes",
+          "name": "ROS2 Nodes"
+        },
+        {
+          "id": "subs",
+          "name": "Subscribers"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "ros2-plugin.refresh-connections",
+          "when": "view == nodes",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "ros2-plugin.toggle-subscription",
+          "when": "view == nodes && viewItem == publisher"
+        },
+        {
+          "command": "ros2-plugin.create-subscriber",
+          "when": "view == nodes && viewItem == publisher"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "yarn run lint",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^9.9.1"
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "socket.io-client": "^4.7.5",
+    // "zenoh_socketio_bridge": "^0.1.1"
+  }
+}
