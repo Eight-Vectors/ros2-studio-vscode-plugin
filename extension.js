@@ -60,7 +60,12 @@ function activate(context) {
         }
 
         channels[treeArg].show();
-        BlackScreenPanel.updateScan();
+        if(key_expr === "scan"){
+          BlackScreenPanel.updateScan();
+        }else if(key_expr === "map_data"){
+          BlackScreenPanel.updateMap()
+        }
+        
       }
     ),
     vscode.commands.registerCommand(

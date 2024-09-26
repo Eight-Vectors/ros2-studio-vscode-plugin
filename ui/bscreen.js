@@ -120,7 +120,7 @@ class BlackScreenPanel {
           <h1>Welcome to ROS VS Code Extension.</h1>
         </div>
         <div id="data"></div>
-        <canvas id="canvas" width="500" height="500"></canvas>
+        <canvas id="canvas" width="0" height="0"></canvas>
         <script>
           console.log("Webview content loaded");
           let selectedTopics = {};
@@ -138,9 +138,6 @@ class BlackScreenPanel {
             console.log("DOMContentLoaded event fired");
             const canvas = document.getElementById('canvas');
             const ctx = canvas.getContext('2d');
-            const canvasWidth = canvas.width;
-            const canvasHeight = canvas.height;
-            ctx.translate(canvasWidth / 2, canvasHeight / 2);
 
             window.addEventListener('message', (event) => {
               const message = event.data;
@@ -149,23 +146,37 @@ class BlackScreenPanel {
               switch (message.command) {
                 case 'map_data':
                   mapdata = message.data
-                  const canvas = document.getElementById('canvas');
-                  const ctx = canvas.getContext('2d');
+                  console.log("Map",mapdata);
                   const canvasWidth = mapdata.width;
                   const canvasHeight = mapdata.height;
                   ctx.translate(canvasWidth / 2, canvasHeight / 2);
+                  const imageData = ctx.createImageData(mapdata.width,mapdata.height);
+                  const data = imageData.data;
+                  const pixels = mapdata.data;
+                  const maxval = 255;
+          
+                  for (let i = 0; i < pixels.length; i++) {
+                    const intensity = Math.round((pixels[i] / maxval) * 255);
+                    data[i * 4] = intensity;    // R
+                    data[i * 4 + 1] = intensity;// G
+                    data[i * 4 + 2] = intensity;// B
+                    data[i * 4 + 3] = 255;      // A
+                  }
+                  ctx.putImageData(imageData, 0, 0);
+                  break;
+
                 case 'scan_data':
                   const scanObj = message.data;
                   const angle_min = scanObj.angle_min;
                   const angle_max = scanObj.angle_max;
                   const angle_increment = scanObj.angle_increment;
                   const ranges = scanObj.ranges;
+                  console.log("MapData From Scan",mapdata);
 
                   ranges.forEach((dp, idx) => {
                     const angle = angle_min + (idx * angle_increment);
                     const px =1 * ((dp * Math.cos(angle)) / mapdata.resolution) ;
                     const py =-1 * ((dp * Math.sin(angle)) / mapdata.resolution);
-                    const {canvasX,canvasY} = convertRosMapFrameToCanvas(x,y,mapdata.originX,mapdata.originY,mapdata.resolution);
 
                     const width = 5;
                     const height = 5;
