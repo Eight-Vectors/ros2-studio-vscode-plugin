@@ -12,6 +12,12 @@ function ensurePort(address, defaultPort = 8000) {
   }
 }
 
+function flattenArrayofObjects(array) {
+  return array.reduce((acc, curr) => {
+    return { ...acc, ...curr }; // Merge each object into the accumulator
+  }, {});
+}
+
 function generateTimestamp() {
   const now = new Date();
   const year = now.getFullYear();
@@ -167,5 +173,6 @@ class REPL {
 module.exports = {
   ensurePort,
   generateTimestamp,
+  flattenArrayofObjects,
   REPL,
 };

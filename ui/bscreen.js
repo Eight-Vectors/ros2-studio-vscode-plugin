@@ -1,4 +1,5 @@
 const vscode = require("vscode");
+const helpers = require("../utils/helpers");
 
 class BlackScreenPanel {
   static currentPanel;
@@ -61,6 +62,10 @@ class BlackScreenPanel {
   static updateMap(map_name) {
     if (BlackScreenPanel.currentPanel) {
       this.socket.on(map_name, (data) => {
+        data = {
+          ...data,
+          info: helpers.flattenArrayofObjects(data?.info),
+        };
         BlackScreenPanel.currentPanel._panel.webview.postMessage({
           command: "map_data",
           data: data,
