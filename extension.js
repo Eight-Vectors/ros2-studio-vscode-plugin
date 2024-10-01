@@ -43,7 +43,7 @@ function activate(context) {
       "ros2-plugin.toggle-subscription",
       (treeArg) => {
         // looks like {node_name}/{topic_name}`
-        let key_expr = treeArg.split("/")[1];
+        let key_expr = treeArg.split("/").slice(1).join("/");
         channels[treeArg] =
           channels[treeArg] || vscode.window.createOutputChannel(treeArg);
 
@@ -66,8 +66,8 @@ function activate(context) {
         channels[treeArg].show();
         if (key_expr === "scan") {
           BlackScreenPanel.updateScan();
-        } else if (key_expr === "map") {
-          BlackScreenPanel.updateMap();
+        } else if (key_expr.includes("map")) {
+          BlackScreenPanel.updateMap(key_expr);
         }
       }
     ),

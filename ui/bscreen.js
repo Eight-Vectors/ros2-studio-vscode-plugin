@@ -58,9 +58,9 @@ class BlackScreenPanel {
     }
   }
 
-  static updateMap() {
+  static updateMap(map_name) {
     if (BlackScreenPanel.currentPanel) {
-      this.socket.on("map", (data) => {
+      this.socket.on(map_name, (data) => {
         BlackScreenPanel.currentPanel._panel.webview.postMessage({
           command: "map_data",
           data: data,

@@ -82,8 +82,10 @@ class PublishersProvider {
       ? this.getNodes(element)
       : element instanceof Node
       ? this.getTopics(element)
-      : element instanceof Topic
+      : element instanceof Topic && element.label === "publishers"
       ? this.getPublishers(element)
+      : element instanceof Topic && element.label !== "publishers"
+      ? this.getClients(element)
       : Promise.resolve([]);
   }
 
@@ -132,19 +134,37 @@ class PublishersProvider {
   }
 
   getTopics(node) {
-    return ["publishers"].map(
+    return ["publishers", "action_clients", "service_clients"].map(
       (label) =>
         new Topic(label, node, vscode.TreeItemCollapsibleState.Collapsed)
     );
   }
 
+  async getClients(topic) {
+    const leaves = this.treeData[topic.node.address].find((nd) =>
+      nd.key.includes(topic.node.label)
+    ).value[topic.label];
+
+    return leaves.map((leave) => {
+      const lbl = leave.name.substring(1);
+      const nodename = topic.node.label;
+      return new Publisher(
+        lbl,
+        nodename,
+        topic.node.address,
+        false,
+        vscode.TreeItemCollapsibleState.None
+      );
+    });
+  }
+
   async getPublishers(topic) {
     const leaves = this.treeData[topic.node.address].find((nd) =>
       nd.key.includes(topic.node.label)
-    ).value["publishers"];
+    ).value[topic.label];
 
     return leaves.map((leave) => {
-      const lbl = leave.name.split("/").pop();
+      const lbl = leave.name.substring(1);
       const nodename = topic.node.label;
       const pub = new Publisher(
         lbl,
