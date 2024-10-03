@@ -105,6 +105,6 @@
   },
   "dependencies": {
     "axios": "^1.7.7",
-    "socket.io-client": "^4.7.5",
+    "socket.io-client": "^4.7.5"
   }
 }
