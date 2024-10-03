@@ -106,6 +106,5 @@
   "dependencies": {
     "axios": "^1.7.7",
     "socket.io-client": "^4.7.5",
-    "zenoh_socketio_bridge": "^0.1.1"
   }
 }
