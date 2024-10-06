@@ -1,5 +1,6 @@
 const io = require("socket.io-client");
 const vscode = require("vscode");
+const { validateAndFormatEndpoint } = require("./utils/helpers");
 
 const socket_endpoint = "ws://localhost:5001";
 
@@ -17,7 +18,14 @@ class SocketClient {
       return;
     }
 
-    this.socket = io(this.url);
+    let [url, error] = validateAndFormatEndpoint(this.url, "5001", "websocket");
+    if (error) {
+      this.pChannel.appendLine(`Fail to connect to remote server: ${error}`);
+    }
+
+    this.socket = io(url);
+
+    console.log(this.socket);
 
     this.socket.on("connect", () => {
       this.pChannel.appendLine("Connected to websocket server");

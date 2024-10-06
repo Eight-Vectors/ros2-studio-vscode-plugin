@@ -1,65 +1,48 @@
-# ros2-zenoh-plugin README
-
-This is the README for your extension "ros2-zenoh-plugin". After writing up a brief description, we recommend including the following sections.
+# vscode-ros-extension README
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- Display of ros2 `nodes`/`topics`/`action_clients`/`server_clients` from the sever connected to dds bridge.
+- Subscribe and unsubscribe ros2 `publishers`.
+- Visualization `map`/`laser scan`.
+- REPL enviroment **in progress**
 
-For example if there is an image subfolder under your extension project workspace:
+## Debugging Setup
 
-\!\[feature X\]\(images/feature-x.png\)
+Follow these steps to debug/test **vscode-ros-extension** inside vscode editor.
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+### Prerequisites
 
-## Requirements
+- [Visual Studio Code](https://code.visualstudio.com/download)
+- [Node JS](https://nodejs.org/en)
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+### VSCode : Debug
+
+To debug/test the extension on vscode editor:
+
+- Clone the repository and change directory to the repostiory.
+
+```bash
+git clone <repository_url>
+cd <repository_folder>
+code .
+```
+
+- Press `F5` to launch the extension in a new VSCode window.
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
 This extension contributes the following settings:
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+### Commands contributions
 
-## Known Issues
+- `vscode-ros-extension.connect-bridge"`: Connect to remote cluster with zenoh ros2dds bridge running.
+- `vscode-ros-extension.refresh-connections`: Refresh nodes from the connected cluster.
+- `vscode-ros-extension.toggle-subscription`: Sub/unsub available topics.
+- `vscode-ros-extension.refresh-connections`: Create a subscriber `N/A`.
+- `vscode-ros-extension.refresh-connections`: Publish the subscriber `N/A`.
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+### Configuration contributions
 
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+- `vscode-ros-extension.tcpPort`: Set tcp port to listen for `default "7447"`.
+- `vscode-ros-extension.websocketPort`: Set tcp port to listen for `default "5001"`.

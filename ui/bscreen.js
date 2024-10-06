@@ -26,6 +26,7 @@ class BlackScreenPanel {
   }
 
   static createOrShow(extensionUri, socket) {
+    console.log(socket);
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
       : undefined;

@@ -1,6 +1,10 @@
 const axios = require("axios");
 const vscode = require("vscode");
-const { ensurePort } = require("../utils/helpers");
+const {
+  validateAndFormatEndpoint,
+  logOutputChannel,
+  extensionHandle,
+} = require("../utils/helpers");
 
 class Item extends vscode.TreeItem {
   constructor(label, collapsibleState, command) {
@@ -56,18 +60,23 @@ class Publisher extends vscode.TreeItem {
   }
 }
 
+const config = vscode.workspace.getConfiguration(extensionHandle);
+
 class PublishersProvider {
-  constructor(bridgeAddresses, channel) {
+  constructor(bridgeAddress, extHandle, channel) {
     this._onDidChangeTreeData = new vscode.EventEmitter();
     this.onDidChangeTreeData = this._onDidChangeTreeData.event;
+
     this.pubs = {};
     this.subs = {};
+
     this.channel = channel;
-    this.treeData = {};
-    this.bridgeAddresses = bridgeAddresses;
+
+    this.bridgeData = {};
+    this.bridgeAddress = bridgeAddress;
   }
 
-  refresh(bridgeAddresses) {
+  refresh() {
     this._onDidChangeTreeData.fire();
   }
 
@@ -101,22 +110,27 @@ class PublishersProvider {
   }
 
   async getTrees() {
-    return this.bridgeAddresses.map(
+    return this.bridgeAddress.map(
       (address) => new Tree(address, vscode.TreeItemCollapsibleState.Expanded)
     );
   }
 
   async getNodes(tree) {
     try {
-      this.treeData[tree.label] = await this.fetchData(
-        ensurePort(tree.address) + "/@ros2/**/node/**"
+      const [http, error] = validateAndFormatEndpoint(
+        tree.address,
+        config.get("httpPort")
       );
-
-      if (!this.treeData[tree.address]) {
-        this.treeData[tree.address] = [];
+      if (error) {
+        this.bridgeData = [];
+        this.bridgeAddress = "";
+        throw error;
       }
-      vscode.window.showInformationMessage(`Connected to ${tree.address}.`);
-      return this.treeData[tree.address].map(
+      this.bridgeData = await this.fetchData(http + "/@ros2/**/node/**");
+      vscode.window.showInformationMessage(
+        `Connected to ${this.bridgeAddress}.`
+      );
+      return this.bridgeData.map(
         (nodeData) =>
           new Node(
             nodeData.key.split("/").pop(),
@@ -126,10 +140,11 @@ class PublishersProvider {
       );
     } catch (error) {
       if (typeof error === "object" && "message" in error) {
-        this.channel.appendLine(error.message);
-        this.channel.show();
+        logOutputChannel(this.channel, "error", error.message);
       }
-      vscode.window.showWarningMessage(`Failed to connect to ${tree.address}.`);
+      vscode.window.showWarningMessage(
+        `Failed to connect to ${this.bridgeAddress}.`
+      );
     }
   }
 
@@ -141,7 +156,7 @@ class PublishersProvider {
   }
 
   async getClients(topic) {
-    const leaves = this.treeData[topic.node.address].find((nd) =>
+    const leaves = this.bridgeData.find((nd) =>
       nd.key.includes(topic.node.label)
     ).value[topic.label];
 
@@ -159,7 +174,7 @@ class PublishersProvider {
   }
 
   async getPublishers(topic) {
-    const leaves = this.treeData[topic.node.address].find((nd) =>
+    const leaves = this.bridgeData.find((nd) =>
       nd.key.includes(topic.node.label)
     ).value[topic.label];
 
@@ -173,7 +188,7 @@ class PublishersProvider {
         false,
         vscode.TreeItemCollapsibleState.None,
         {
-          command: "ros2-plugin.toggle-subscription",
+          command: `${extensionHandle}.toggle-subscription`,
           title: "Toggle Publisher",
           arguments: [`${nodename}/${lbl}`],
         }

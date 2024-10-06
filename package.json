@@ -1,6 +1,6 @@
 {
-  "name": "ros2-zenoh-plugin",
-  "displayName": "ros2-zenoh-plugin",
+  "name": "vscode-ros-extension",
+  "displayName": "vscode-ros-extension",
   "description": "",
   "version": "0.0.1",
   "engines": {
@@ -14,81 +14,102 @@
   "contributes": {
     "commands": [
       {
-        "command": "ros2-plugin.connect-bridge",
+        "command": "vscode-ros-extension.connect-bridge",
         "title": "Connect to Remote"
       },
       {
-        "command": "ros2-plugin.refresh-connections",
+        "command": "vscode-ros-extension.disconnect-bridge",
+        "title": "Disconnect"
+      },
+      {
+        "command": "vscode-ros-extension.refresh-connections",
         "title": "Refresh connection",
         "icon": "$(refresh)"
       },
       {
-        "command": "ros2-plugin.toggle-subscription",
+        "command": "vscode-ros-extension.toggle-subscription",
         "title": "Subscribe"
       },
       {
-        "command": "ros2-plugin.create-subscriber",
+        "command": "vscode-ros-extension.create-subscriber",
         "title": "Create subscription"
       },
       {
-        "command": "ros2-plugin.publish-subscriber",
+        "command": "vscode-ros-extension.publish-subscriber",
         "title": "Run subscription"
       }
     ],
+    "configuration": {
+      "type": "object",
+      "title": "Extension Configuration",
+      "properties": {
+        "vscode-ros-extension.tcpPort": {
+          "type": "string",
+          "default": "7447",
+          "description": "Tcp port for dds connections"
+        },
+        "vscode-ros-extension.httpPort": {
+          "type": "string",
+          "default": "8000",
+          "description": "Http port for dds connections"
+        },
+        "vscode-ros-extension.websocketPort": {
+          "type": "string",
+          "default": "5001",
+          "description": "Websocket port for socket connections"
+        }
+      }
+    },
     "keybindings": [
       {
-        "command": "ros2-plugin.publish-subscriber",
+        "command": "vscode-ros-extension.publish-subscriber",
         "key": "ctrl+shift+k",
         "when": "editorTextFocus"
       }
     ],
     "viewsWelcome": [
       {
-        "view": "nodes",
-        "contents": "[Connect](command:ros2-plugin.connect-bridge)"
-      },
-      {
-        "view": "subs",
-        "contents": "[Connect](command:ros2-plugin.connect-bridge)"
+        "view": "extNodesView",
+        "contents": "[Connect](command:vscode-ros-extension.connect-bridge)"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "pluginView",
-          "title": "Ros2 Plugin",
+          "id": "extContainerView",
+          "title": "Extension View Container",
           "icon": "media/industrial-robot.svg"
         }
       ]
     },
     "views": {
-      "pluginView": [
+      "extContainerView": [
         {
-          "id": "nodes",
-          "name": "ROS2 Nodes"
-        },
-        {
-          "id": "subs",
-          "name": "Subscribers"
+          "id": "extNodesView",
+          "name": "List of avaiable nodes from bridge"
         }
       ]
     },
     "menus": {
       "view/title": [
         {
-          "command": "ros2-plugin.refresh-connections",
-          "when": "view == nodes",
+          "command": "vscode-ros-extension.refresh-connections",
+          "when": "view == extNodesView",
           "group": "navigation"
         }
       ],
       "view/item/context": [
         {
-          "command": "ros2-plugin.toggle-subscription",
-          "when": "view == nodes && viewItem == publisher"
+          "command": "vscode-ros-extension.toggle-subscription",
+          "when": "view == extNodesView && viewItem == publisher"
         },
         {
-          "command": "ros2-plugin.create-subscriber",
-          "when": "view == nodes && viewItem == publisher"
+          "command": "vscode-ros-extension.create-subscriber",
+          "when": "view == extNodesView && viewItem == publisher"
+        },
+        {
+          "command": "vscode-ros-extension.disconnect-bridge",
+          "when": "view == extNodesView && viewItem == nodeTree"
         }
       ]
     }
