@@ -2,3 +2,5 @@
 .yarnrc
 .vscode*
 /node_modules
+
+ui/visualizationPanelbk.js

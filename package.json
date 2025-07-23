@@ -37,26 +37,24 @@
       {
         "command": "vscode-ros-extension.publish-subscriber",
         "title": "Run subscription"
+      },
+      {
+        "command": "vscode-ros-extension.visualize-topic",
+        "title": "Visualize Topic"
+      },
+      {
+        "command": "vscode-ros-extension.reset-visualization-preference",
+        "title": "Reset Visualization View Mode Preference"
       }
     ],
     "configuration": {
       "type": "object",
       "title": "Extension Configuration",
       "properties": {
-        "vscode-ros-extension.tcpPort": {
+        "vscode-ros-extension.rosbridgeUrl": {
           "type": "string",
-          "default": "7447",
-          "description": "Tcp port for dds connections"
-        },
-        "vscode-ros-extension.httpPort": {
-          "type": "string",
-          "default": "8000",
-          "description": "Http port for dds connections"
-        },
-        "vscode-ros-extension.websocketPort": {
-          "type": "string",
-          "default": "5001",
-          "description": "Websocket port for socket connections"
+          "default": "ws://localhost:9090",
+          "description": "Rosbridge WebSocket URL"
         }
       }
     },
@@ -86,7 +84,8 @@
       "extContainerView": [
         {
           "id": "extNodesView",
-          "name": "List of avaiable nodes from bridge"
+          "name": "List of avaiable nodes from bridge",
+          "icon": "media/industrial-robot.svg"
         }
       ]
     },
@@ -108,6 +107,10 @@
           "when": "view == extNodesView && viewItem == publisher"
         },
         {
+          "command": "vscode-ros-extension.visualize-topic",
+          "when": "view == extNodesView && (viewItem == publisher || viewItem == subscribers)"
+        },
+        {
           "command": "vscode-ros-extension.disconnect-bridge",
           "when": "view == extNodesView && viewItem == nodeTree"
         }
@@ -116,7 +119,7 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "pretest": "yarn run lint",
+    "pretest": "npm run lint",
     "test": "vscode-test"
   },
   "devDependencies": {
@@ -126,6 +129,6 @@
   },
   "dependencies": {
     "axios": "^1.7.7",
-    "socket.io-client": "^4.7.5"
+    "roslib": "^1.4.1"
   }
 }

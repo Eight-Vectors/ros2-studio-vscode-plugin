@@ -1,10 +1,5 @@
-const axios = require("axios");
 const vscode = require("vscode");
-const {
-  validateAndFormatEndpoint,
-  logOutputChannel,
-  extensionHandle,
-} = require("../utils/helpers");
+const { extensionHandle } = require("../utils/helpers");
 
 class Item extends vscode.TreeItem {
   constructor(label, collapsibleState, command) {
@@ -38,12 +33,21 @@ class Topic extends Item {
 }
 
 class Publisher extends vscode.TreeItem {
-  constructor(label, nodeLabel, address, isChecked, collapsibleState, command) {
+  constructor(
+    label,
+    nodeLabel,
+    address,
+    isChecked,
+    collapsibleState,
+    command,
+    messageType = null
+  ) {
     super(label, collapsibleState);
     this.nodeLabel = nodeLabel;
     this.address = address;
     this.isChecked = isChecked;
     this.command = command;
+    this.messageType = messageType;
     this.contextValue = "publisher";
     this.updateIcon();
   }
@@ -60,7 +64,68 @@ class Publisher extends vscode.TreeItem {
   }
 }
 
-const config = vscode.workspace.getConfiguration(extensionHandle);
+class Subscriber extends vscode.TreeItem {
+  constructor(
+    label,
+    nodeLabel,
+    address,
+    isChecked,
+    collapsibleState,
+    command,
+    messageType = null
+  ) {
+    super(label, collapsibleState);
+    this.nodeLabel = nodeLabel;
+    this.address = address;
+    this.isChecked = isChecked;
+    this.command = command;
+    this.messageType = messageType;
+    this.contextValue = "subscribers";
+    this.updateIcon();
+  }
+
+  updateIcon() {
+    this.iconPath = new vscode.ThemeIcon(
+      this.isChecked ? "check" : "circle-outline"
+    );
+  }
+
+  toggleChecked() {
+    this.isChecked = !this.isChecked;
+    this.updateIcon();
+  }
+}
+
+class Service extends vscode.TreeItem {
+  constructor(label, nodeLabel, address, collapsibleState, command = null) {
+    super(label, collapsibleState);
+    this.nodeLabel = nodeLabel;
+    this.address = address;
+    this.command = command;
+    this.contextValue = "service";
+  }
+}
+
+class ActionClient extends vscode.TreeItem {
+  constructor(label, nodeLabel, address, collapsibleState, command = null) {
+    super(label, collapsibleState);
+    this.nodeLabel = nodeLabel;
+    this.address = address;
+    this.command = command;
+    this.contextValue = "actionClient";
+    this.iconPath = new vscode.ThemeIcon("run-all");
+  }
+}
+
+class ServiceClient extends vscode.TreeItem {
+  constructor(label, nodeLabel, address, collapsibleState) {
+    super(label, collapsibleState);
+    this.nodeLabel = nodeLabel;
+    this.address = address;
+    this.contextValue = "serviceClient";
+    this.iconPath = new vscode.ThemeIcon("server-process");
+  }
+}
 
 class PublishersProvider {
   constructor(bridgeAddress, extHandle, channel) {
@@ -74,6 +139,12 @@ class PublishersProvider {
 
     this.bridgeData = {};
     this.bridgeAddress = bridgeAddress;
+    this.rosbridgeClient = null;
+  }
+
+  setRosbridgeClient(client) {
+    this.rosbridgeClient = client;
+    this.channel.appendLine("Rosbridge client set in tree provider");
   }
 
   refresh() {
@@ -85,17 +156,28 @@ class PublishersProvider {
   }
 
   getChildren(element) {
-    return !element
-      ? this.getTrees()
-      : element instanceof Tree
-      ? this.getNodes(element)
-      : element instanceof Node
-      ? this.getTopics(element)
-      : element instanceof Topic && element.label === "publishers"
-      ? this.getPublishers(element)
-      : element instanceof Topic && element.label !== "publishers"
-      ? this.getClients(element)
-      : Promise.resolve([]);
+    if (!element) {
+      return this.getTrees();
+    } else if (element instanceof Tree) {
+      return this.getNodes(element);
+    } else if (element instanceof Node) {
+      return this.getTopics(element);
+    } else if (element instanceof Topic) {
+      switch (element.label) {
+        case "publishers":
+          return this.getPublishers(element);
+        case "subscribers":
+          return this.getSubscribers(element);
+        case "service_clients":
+          return this.getServiceClients(element);
+        case "action_clients":
+          return this.getActionClients(element);
+        default:
+          return Promise.resolve([]);
+      }
+    } else {
+      return Promise.resolve([]);
+    }
   }
 
   toggleCheckbox(lbl) {
@@ -116,91 +198,206 @@ class PublishersProvider {
   }
 
   async getNodes(tree) {
-    try {
-      const [http, error] = validateAndFormatEndpoint(
-        tree.address,
-        config.get("httpPort")
-      );
-      if (error) {
-        this.bridgeData = [];
-        this.bridgeAddress = "";
-        throw error;
-      }
-      this.bridgeData = await this.fetchData(http + "/@ros2/**/node/**");
-      vscode.window.showInformationMessage(
-        `Connected to ${this.bridgeAddress}.`
-      );
-      return this.bridgeData.map(
-        (nodeData) =>
-          new Node(
-            nodeData.key.split("/").pop(),
-            tree.address,
-            vscode.TreeItemCollapsibleState.Collapsed
-          )
-      );
-    } catch (error) {
-      if (typeof error === "object" && "message" in error) {
-        logOutputChannel(this.channel, "error", error.message);
-      }
-      vscode.window.showWarningMessage(
-        `Failed to connect to ${this.bridgeAddress}.`
-      );
+    this.channel.appendLine(
+      `getNodes called - rosbridgeClient: ${!!this
+        .rosbridgeClient}, isConnected: ${
+        this.rosbridgeClient ? this.rosbridgeClient.isConnected() : "N/A"
+      }`
+    );
+
+    if (this.rosbridgeClient && this.rosbridgeClient.isConnected()) {
+      // Use rosbridge to get nodes
+      this.channel.appendLine("Using rosbridge to get nodes...");
+      return new Promise((resolve) => {
+        this.rosbridgeClient.getNodes((nodes) => {
+          this.channel.appendLine(
+            `Received ${nodes.length} nodes from rosbridge`
+          );
+          const nodeItems = nodes.map(
+            (nodeName) =>
+              new Node(
+                nodeName,
+                tree.address,
+                vscode.TreeItemCollapsibleState.Collapsed
+              )
+          );
+          resolve(nodeItems);
+        });
+      });
+    } else {
+      this.channel.appendLine("No rosbridge connection available");
+      return [];
     }
   }
 
   getTopics(node) {
-    return ["publishers", "action_clients", "service_clients"].map(
-      (label) =>
-        new Topic(label, node, vscode.TreeItemCollapsibleState.Collapsed)
-    );
+    if (this.rosbridgeClient && this.rosbridgeClient.isConnected()) {
+      // Return categories for publishers, subscribers, service_clients, and action_clients
+      const categories = ["publishers", "subscribers", "service_clients", "action_clients"];
+      return categories.map(
+        (label) =>
+          new Topic(label, node, vscode.TreeItemCollapsibleState.Collapsed)
+      );
+    } else {
+      return [];
+    }
   }
 
-  async getClients(topic) {
-    const leaves = this.bridgeData.find((nd) =>
-      nd.key.includes(topic.node.label)
-    ).value[topic.label];
-
-    return leaves.map((leave) => {
-      const lbl = leave.name.substring(1);
-      const nodename = topic.node.label;
-      return new Publisher(
-        lbl,
-        nodename,
-        topic.node.address,
-        false,
-        vscode.TreeItemCollapsibleState.None
-      );
-    });
+  async getClients() {
+    // Not used with rosbridge
+    return [];
   }
 
   async getPublishers(topic) {
-    const leaves = this.bridgeData.find((nd) =>
-      nd.key.includes(topic.node.label)
-    ).value[topic.label];
-
-    return leaves.map((leave) => {
-      const lbl = leave.name.substring(1);
-      const nodename = topic.node.label;
-      const pub = new Publisher(
-        lbl,
-        nodename,
-        topic.node.address,
-        false,
-        vscode.TreeItemCollapsibleState.None,
-        {
-          command: `${extensionHandle}.toggle-subscription`,
-          title: "Toggle Publisher",
-          arguments: [`${nodename}/${lbl}`],
-        }
-      );
-      this.pubs[`${nodename}/${lbl}`] = pub;
-      return this.pubs[`${nodename}/${lbl}`];
-    });
+    if (this.rosbridgeClient && this.rosbridgeClient.isConnected()) {
+      return new Promise((resolve) => {
+        const nodeName = topic.node.label;
+        
+        // Get node-specific details
+        this.rosbridgeClient.getNodeDetails(nodeName, (details) => {
+          const publishingTopics = details.publishing || [];
+          
+          // Get all topics to find their types
+          this.rosbridgeClient.getTopics((allTopics) => {
+            // Create a map of topic names to types
+            const topicTypeMap = {};
+            allTopics.forEach(topicInfo => {
+              topicTypeMap[topicInfo.name] = topicInfo.type;
+            });
+            
+            // Create publishers only for topics this node publishes
+            const publishers = publishingTopics.map((topicName) => {
+              const topicType = topicTypeMap[topicName] || "unknown";
+              const pub = new Publisher(
+                topicName,
+                nodeName,
+                topic.node.address,
+                false,
+                vscode.TreeItemCollapsibleState.None,
+                {
+                  command: `${extensionHandle}.toggle-subscription`,
+                  title: "Toggle Publisher",
+                  arguments: [`${nodeName}${topicName}`, topicType],
+                },
+                topicType
+              );
+              this.pubs[`${nodeName}${topicName}`] = pub;
+              return pub;
+            });
+            
+            resolve(publishers);
+          });
+        });
+      });
+    } else {
+      return [];
+    }
   }
 
-  async fetchData(url) {
-    const response = await axios.get(url);
-    return response.data;
+  async getSubscribers(topic) {
+    if (this.rosbridgeClient && this.rosbridgeClient.isConnected()) {
+      return new Promise((resolve) => {
+        const nodeName = topic.node.label;
+        
+        // Get node-specific details
+        this.rosbridgeClient.getNodeDetails(nodeName, (details) => {
+          const subscribingTopics = details.subscribing || [];
+          
+          // Get all topics to find their types
+          this.rosbridgeClient.getTopics((allTopics) => {
+            // Create a map of topic names to types
+            const topicTypeMap = {};
+            allTopics.forEach(topicInfo => {
+              topicTypeMap[topicInfo.name] = topicInfo.type;
+            });
+            
+            // Create subscribers only for topics this node subscribes to
+            const subscribers = subscribingTopics.map((topicName) => {
+              const topicType = topicTypeMap[topicName] || "unknown";
+              const sub = new Subscriber(
+                topicName,
+                nodeName,
+                topic.node.address,
+                false,
+                vscode.TreeItemCollapsibleState.None,
+                {
+                  command: `${extensionHandle}.toggle-subscription`,
+                  title: "Toggle Subscriber",
+                  arguments: [`${nodeName}${topicName}`, topicType],
+                },
+                topicType
+              );
+              return sub;
+            });
+            
+            resolve(subscribers);
+          });
+        });
+      });
+    } else {
+      return [];
+    }
+  }
+
+  async getServiceClients(topic) {
+    if (this.rosbridgeClient && this.rosbridgeClient.isConnected()) {
+      return new Promise((resolve) => {
+        const nodeName = topic.node.label;
+        
+        // Get node-specific details
+        this.rosbridgeClient.getNodeDetails(nodeName, (details) => {
+          const services = details.services || [];
+          
+          // Create service clients for services this node provides
+          const serviceClients = services.map((serviceName) => {
+            return new Service(
+              serviceName,
+              nodeName,
+              topic.node.address,
+              vscode.TreeItemCollapsibleState.None,
+              {
+                command: `${extensionHandle}.call-service`,
+                title: "Call Service",
+                arguments: [serviceName, nodeName]
+              }
+            );
+          });
+          
+          resolve(serviceClients);
+        });
+      });
+    } else {
+      return [];
+    }
+  }
+
+  async getActionClients(topic) {
+    if (this.rosbridgeClient && this.rosbridgeClient.isConnected()) {
+      return new Promise((resolve) => {
+        const nodeName = topic.node.label;
+        
+        // Get node-specific details
+        this.rosbridgeClient.getNodeDetails(nodeName, (details) => {
+          // Check if action_clients is available in the details
+          // If not, we'll return an empty array for now
+          const actionClients = details.action_clients || [];
+          
+          // Create action clients for this node
+          const actionClientItems = actionClients.map((actionName) => {
+            return new ActionClient(
+              actionName,
+              nodeName,
+              topic.node.address,
+              vscode.TreeItemCollapsibleState.None
+            );
+          });
+          
+          resolve(actionClientItems);
+        });
+      });
+    } else {
+      return [];
+    }
   }
 }
 

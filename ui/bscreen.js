@@ -1,5 +1,4 @@
 const vscode = require("vscode");
-const helpers = require("../utils/helpers");
 
 class BlackScreenPanel {
   static currentPanel;
@@ -49,31 +48,9 @@ class BlackScreenPanel {
     BlackScreenPanel.currentPanel = new BlackScreenPanel(panel, extensionUri);
   }
 
-  static updateScan() {
-    if (BlackScreenPanel.currentPanel) {
-      this.socket.on("scan", (data) => {
-        BlackScreenPanel.currentPanel._panel.webview.postMessage({
-          command: "scan_data",
-          data: data,
-        });
-      });
-    }
-  }
+  static updateScan() {}
 
-  static updateMap(map_name) {
-    if (BlackScreenPanel.currentPanel) {
-      this.socket.on(map_name, (data) => {
-        data = {
-          ...data,
-          info: helpers.flattenArrayofObjects(data?.info),
-        };
-        BlackScreenPanel.currentPanel._panel.webview.postMessage({
-          command: "map_data",
-          data: data,
-        });
-      });
-    }
-  }
+  static updateMap() {}
 
   static update(data, checked, topic) {
     if (BlackScreenPanel.currentPanel) {
@@ -111,15 +88,10 @@ class BlackScreenPanel {
           h1 { color: white; }
           canvas { background-color: white; }
         </style>
-        <script
-          src="https://cdn.socket.io/4.7.5/socket.io.min.js"
-          integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO"
-          crossorigin="anonymous"
-        ></script>
       </head>
       <body>
         <div id="content">
-          <h1>Welcome to ROS VS Code Extension.</h1>
+          <h1>Vscode Ros Extension.</h1>
         </div>
         <div id="data"></div>
         <canvas id="canvas" width="0" height="0"></canvas>
@@ -128,11 +100,12 @@ class BlackScreenPanel {
           let selectedTopics = {};
           let mapdata = {};
 
-          function convertRosMapFrameToCanvas (x,y,originX,originY,resolution){
-            const mx = -1 * (originX);
-            const my = -1 * (originY);
-            const canvasX = (x + mx) / resolution;
-            const canvasY = (y + my) / resolution;
+          function convertRosMapFrameToCanvas (x,y,originX,originY,resolution,mapHeight){
+            const mapX = (x - originX) / resolution;
+            const mapY = (y - originY) / resolution;
+            // In canvas, Y is flipped (0 is top, but in ROS 0 is bottom)
+            const canvasX = mapX;
+            const canvasY = mapY;
             return {canvasX,canvasY}
           }
 
@@ -147,45 +120,192 @@ class BlackScreenPanel {
 
               switch (message.command) {
                 case 'map_data':
-                  mapdata = message.data
-                  console.log("map data" + mapdata)
-                  canvas.width = mapdata?.width ?? 0;
-                  canvas.height = mapdata?.height ?? 0;
-                  ctx.translate(canvas.width / 2, canvas.height / 2);
-                  // const imageData = ctx.createImageData(mapdata.width,mapdata.height);
-                  // const data = imageData.data;
-                  // const pixels = mapdata.data;
-                  // const maxval = 255;
-          
-                  // for (let i = 0; i < pixels.length; i++) {
-                  //   const intensity = Math.round((pixels[i] / maxval) * 255);
-                  //   data[i * 4] = intensity;    // R
-                  //   data[i * 4 + 1] = intensity;// G
-                  //   data[i * 4 + 2] = intensity;// B
-                  //   data[i * 4 + 3] = 255;      // A
-                  // }
-                  // ctx.putImageData(imageData, 0, 0);
+                  mapdata = message.data;
+                  // Avoid logging entire mapdata to prevent circular reference errors
+                  console.log("Map data received");
+                  console.log("Map info - width:", mapdata?.info?.width, "height:", mapdata?.info?.height);
+                  console.log("Map data array length:", mapdata?.data?.length);
+                  
+                  // Set canvas dimensions based on map info
+                  const width = mapdata?.info?.width || 0;
+                  const height = mapdata?.info?.height || 0;
+                  
+                  if (width === 0 || height === 0) {
+                    console.error("Invalid map dimensions:", width, "x", height);
+                    document.getElementById('data').innerHTML = '<p style="color: red;">Invalid map dimensions</p>';
+                    break;
+                  }
+                  
+                  canvas.width = width;
+                  canvas.height = height;
+                  canvas.style.display = 'block';
+                  
+                  // Clear and prepare canvas
+                  ctx.clearRect(0, 0, canvas.width, canvas.height);
+                  
+                  // Render map data
+                  if (mapdata.data && mapdata.data.length > 0) {
+                    const imageData = ctx.createImageData(width, height);
+                    const data = imageData.data;
+                    const pixels = mapdata.data;
+                    
+                    console.log("Processing", pixels.length, "pixels for", width + "x" + height, "map");
+                    
+                    for (let i = 0; i < pixels.length; i++) {
+                      let value = pixels[i];
+                      // Convert occupancy grid values (-1 = unknown, 0 = free, 100 = occupied)
+                      let color;
+                      if (value === -1) {
+                        color = 128; // Gray for unknown
+                      } else if (value === 0) {
+                        color = 255; // White for free space
+                      } else {
+                        color = 255 - Math.round((value / 100.0) * 255); // Black for occupied
+                      }
+                      
+                      data[i * 4] = color;      // R
+                      data[i * 4 + 1] = color;  // G
+                      data[i * 4 + 2] = color;  // B
+                      data[i * 4 + 3] = 255;    // A
+                    }
+                    
+                    ctx.putImageData(imageData, 0, 0);
+                    console.log("Map rendered successfully");
+                    document.getElementById('data').innerHTML = '<p style="color: green;">Map loaded: ' + width + 'x' + height + '</p>';
+                  }
                   break;
 
                 case 'scan_data':
                   const scanObj = message.data;
+                  console.log("Scan data received:", scanObj);
+                  
                   const angle_min = scanObj.angle_min;
                   const angle_max = scanObj.angle_max;
                   const angle_increment = scanObj.angle_increment;
                   const ranges = scanObj.ranges;
-                  console.log("MapData From Scan",mapdata);
-
-                  ranges.forEach((dp, idx) => {
-                    const angle = angle_min + (idx * angle_increment);
-                    const px =1 * ((dp * Math.cos(angle)) / mapdata?.resolution) ;
-                    const py =-1 * ((dp * Math.sin(angle)) / mapdata?.resolution);
-
-                    const width = 5;
-                    const height = 5;
-
+                  console.log("MapData From Scan", mapdata);
+                  
+                  // Only visualize if we have map data
+                  if (mapdata && mapdata.info) {
                     ctx.fillStyle = 'green';
-                    ctx.fillRect(px, py, width, height);
-                  });
+                    
+                    const originX = mapdata.info.origin?.position?.x || 0;
+                    const originY = mapdata.info.origin?.position?.y || 0;
+                    const resolution = mapdata.info.resolution || 0.05;
+                    const mapHeight = mapdata.info.height;
+                    
+                    ranges.forEach((dp, idx) => {
+                      if (dp > 0 && dp < 100) { // Filter out invalid ranges
+                        const angle = angle_min + (idx * angle_increment);
+                        // Convert scan to world coordinates (assuming scan is at robot position 0,0)
+                        const worldX = dp * Math.cos(angle);
+                        const worldY = dp * Math.sin(angle);
+                        
+                        // Convert world coordinates to canvas coordinates
+                        const coords = convertRosMapFrameToCanvas(worldX, worldY, originX, originY, resolution, mapHeight);
+                        
+                        const width = 1;
+                        const height = 1;
+                        
+                        ctx.fillRect(coords.canvasX - width/2, coords.canvasY - height/2, width, height);
+                      }
+                    });
+                  } else {
+                    // No map loaded - create a simple visualization
+                    const scanCanvasSize = 800;
+                    canvas.width = scanCanvasSize;
+                    canvas.height = scanCanvasSize;
+                    
+                    // Clear canvas
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    
+                    // Draw background
+                    ctx.fillStyle = 'black';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    // Set transform to center
+                    ctx.save();
+                    ctx.translate(canvas.width / 2, canvas.height / 2);
+                    
+                    // Draw origin
+                    ctx.strokeStyle = 'red';
+                    ctx.beginPath();
+                    ctx.moveTo(-10, 0);
+                    ctx.lineTo(10, 0);
+                    ctx.moveTo(0, -10);
+                    ctx.lineTo(0, 10);
+                    ctx.stroke();
+                    
+                    // Draw scan points
+                    ctx.fillStyle = 'green';
+                    const defaultResolution = 0.05; // Default 5cm per pixel
+                    
+                    ranges.forEach((dp, idx) => {
+                      if (dp > 0 && dp < 100) { // Filter out invalid ranges
+                        const angle = angle_min + (idx * angle_increment);
+                        const px = 1 * ((dp * Math.cos(angle)) / defaultResolution);
+                        const py = -1 * ((dp * Math.sin(angle)) / defaultResolution);
+                        
+                        const width = 1;
+                        const height = 1;
+                        
+                        ctx.fillRect(px, py, width, height);
+                      }
+                    });
+                    
+                    ctx.restore();
+                  }
+                  break;
+                  
+                case 'clear_scan':
+                  console.log("Clearing scan data");
+                  // If we have a map, just redraw the map without scan
+                  if (mapdata && mapdata.info) {
+                    // Clear canvas
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    
+                    // Redraw map only
+                    const width = mapdata?.info?.width || mapdata?.width || 0;
+                    const height = mapdata?.info?.height || mapdata?.height || 0;
+                    
+                    if (mapdata.data && mapdata.data.length > 0) {
+                      const imageData = ctx.createImageData(width, height);
+                      const data = imageData.data;
+                      const pixels = mapdata.data;
+                      
+                      for (let i = 0; i < pixels.length; i++) {
+                        let value = pixels[i];
+                        let color;
+                        if (value === -1) {
+                          color = 128; // Gray for unknown
+                        } else if (value === 0) {
+                          color = 255; // White for free space
+                        } else {
+                          color = 255 - Math.round((value / 100.0) * 255); // Black for occupied
+                        }
+                        
+                        data[i * 4] = color;
+                        data[i * 4 + 1] = color;
+                        data[i * 4 + 2] = color;
+                        data[i * 4 + 3] = 255;
+                      }
+                      
+                      ctx.putImageData(imageData, 0, 0);
+                    }
+                  } else {
+                    // No map, just clear the canvas
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    canvas.width = 0;
+                    canvas.height = 0;
+                  }
+                  break;
+                  
+                case 'clear_map':
+                  console.log("Clearing map data");
+                  mapdata = {};
+                  ctx.clearRect(0, 0, canvas.width, canvas.height);
+                  canvas.width = 0;
+                  canvas.height = 0;
                   break;
               }
             });
