@@ -2,11 +2,10 @@ const path = require("path");
 const vscode = require("vscode");
 const RosbridgeClient = require("./rosbridge");
 const { PublishersProvider } = require("./ui/tree");
-const { BlackScreenPanel } = require("./ui/bscreen");
 const { VisualizationPanel } = require("./ui/visualizationPanel");
-const { generateTimestamp, REPL, extensionHandle } = require("./utils/helpers");
+const ConnectionDashboard = require("./ui/connectionDashboard");
+const { generateTimestamp, extensionHandle } = require("./utils/helpers");
 
-// Clean map data to avoid circular reference errors
 function processMapData(mapData, channels) {
   try {
     if (!mapData || !mapData.info) {
@@ -67,24 +66,15 @@ function handleMapServiceResult(mapData, channels) {
     return;
   }
 
-  if (BlackScreenPanel.currentPanel) {
-    BlackScreenPanel.currentPanel._panel.webview.postMessage({
-      command: "map_data",
-      data: processedMap,
-    });
-    vscode.window.showInformationMessage("Map loaded in visualization panel");
-  } else {
-    vscode.window.showInformationMessage(
-      "Map received. Open visualization panel to view."
-    );
-  }
+  vscode.window.showInformationMessage(
+    "Map service called successfully. Subscribe to a map topic to visualize."
+  );
 }
 
 function handleGenericServiceResult(serviceName, result, channels) {
   channels["main"].appendLine(`Service result for ${serviceName}:`);
 
   try {
-    // handle circular reference
     const seen = new WeakSet();
     const jsonString = JSON.stringify(
       result,
@@ -113,6 +103,8 @@ function handleGenericServiceResult(serviceName, result, channels) {
 }
 
 function activate(context) {
+  vscode.commands.executeCommand('setContext', 'vscode-ros-extension.isConnected', false);
+  
   let bridge = [];
   let channels = {};
   let ws = null;
@@ -126,10 +118,22 @@ function activate(context) {
     vscode.commands.registerCommand(
       `${extensionHandle}.connect-bridge`,
       async () => {
+        if (ws && ws.isConnected()) {
+          const action = await vscode.window.showWarningMessage(
+            `Already connected to ${ws.url}. Disconnect first?`,
+            "Disconnect", "Cancel"
+          );
+          if (action === "Disconnect") {
+            await vscode.commands.executeCommand(`${extensionHandle}.disconnect-bridge`);
+          } else {
+            return;
+          }
+        }
+        
         const config = vscode.workspace.getConfiguration(extensionHandle);
         const rosbridgeUrl = config.get(
           "rosbridgeUrl",
-          "ws://4.145.88.116:9090"
+          "ws://localhost:9090"
         );
         const customUrl = await vscode.window.showInputBox({
           placeHolder: rosbridgeUrl,
@@ -144,15 +148,12 @@ function activate(context) {
           bridge.push(customUrl);
           ws = new RosbridgeClient(customUrl, channels["main"]);
           tree.setRosbridgeClient(ws);
-          BlackScreenPanel.createOrShow(context.extensionUri, ws);
 
-          // Wait for connection before refreshing tree
           ws.waitForConnection()
             .then(() => {
-              channels["main"].appendLine(
-                "Connection established, refreshing tree..."
-              );
+              vscode.commands.executeCommand('setContext', 'vscode-ros-extension.isConnected', true);
               tree.refresh();
+              ConnectionDashboard.createOrShow(context.extensionUri, ws);
             })
             .catch((error) => {
               channels["main"].appendLine(`Failed to connect: ${error}`);
@@ -168,18 +169,41 @@ function activate(context) {
     vscode.commands.registerCommand(
       `${extensionHandle}.disconnect-bridge`,
       async () => {
-        let addr = bridge.pop();
-        if (ws) {
-          ws.disconnect();
-          ws = null;
+        if (!ws) {
+          vscode.window.showWarningMessage("No active connection to disconnect");
+          return;
         }
+        
+        const disconnectedUrl = ws.url;
+        
+        if (ws.topics) {
+          for (const [topicName, topic] of ws.topics.entries()) {
+            if (topic.subscriptionData && topic.subscriptionData.visualizationPanel) {
+              topic.subscriptionData.visualizationPanel.dispose();
+            }
+            ws.unsubscribeTopic(topicName);
+          }
+        }
+        
+        ws.disconnect();
+        ws = null;
+        
+        tree.setRosbridgeClient(null);
         tree.refresh();
-        vscode.window.showInformationMessage(`Disconnected from ${addr}...`);
+        
+        if (ConnectionDashboard.currentPanel) {
+          ConnectionDashboard.currentPanel.dispose();
+        }
+        
+        bridge.pop();
+        vscode.window.showInformationMessage(`Disconnected from ${disconnectedUrl}`);
+        
+        vscode.commands.executeCommand('setContext', 'vscode-ros-extension.isConnected', false);
       }
     ),
     vscode.commands.registerCommand(
       `${extensionHandle}.refresh-connections`,
-      tree.refresh()
+      () => tree.refresh()
     ),
     vscode.commands.registerCommand(
       `${extensionHandle}.toggle-subscription`,
@@ -222,10 +246,8 @@ function activate(context) {
 
         if (state) {
           // Subscribe using rosbridge
-          // messageType is already provided from the tree view
           const topicMessageType = messageType || "std_msgs/String";
 
-          // Store subscription data for cleanup
           let subscriptionData = {
             visualizationPanel: null,
             creatingPanel: false,
@@ -244,7 +266,6 @@ function activate(context) {
               channels[channelName].appendLine(JSON.stringify(msg, null, 2));
               channels[channelName].appendLine("");
 
-              // Use new visualization panel for supported message types
               const detectedType = VisualizationPanel.detectMessageType(
                 topicMessageType,
                 msg
@@ -254,7 +275,6 @@ function activate(context) {
                 detectedType === "LaserScan" ||
                 detectedType === "URDF"
               ) {
-                // Only create panel if not already creating or created
                 if (
                   !subscriptionData.visualizationPanel &&
                   !subscriptionData.creatingPanel
@@ -280,96 +300,32 @@ function activate(context) {
                   subscriptionData.visualizationPanel.updateData(msg);
                 }
               }
-
-              // Keep legacy visualization for backward compatibility if enabled
-              // if (BlackScreenPanel.currentPanel) {
-              //   if (topicName === "/scan") {
-              //     BlackScreenPanel.currentPanel._panel.webview.postMessage({
-              //       command: "scan_data",
-              //       data: msg,
-              //     });
-              //   } else if (topicName.includes("map")) {
-              //     BlackScreenPanel.currentPanel._panel.webview.postMessage({
-              //       command: "map_data",
-              //       data: msg,
-              //     });
-              //   }
-              // }
             }
           );
 
           if (!subscription) {
             channels[channelName].appendLine("Failed to create subscription");
           } else {
-            // Store subscription data for cleanup
-            subscription.subscriptionData = subscriptionData;
+              subscription.subscriptionData = subscriptionData;
           }
         } else {
-          // Get the subscription to clean up visualization panel
           const topics = ws.topics;
           const subscription = topics ? topics.get(topicName) : null;
 
-          // Clean up visualization panel if it exists
           if (
             subscription &&
             subscription.subscriptionData &&
             subscription.subscriptionData.visualizationPanel
           ) {
             subscription.subscriptionData.visualizationPanel.dispose();
-            // Clear the reference to ensure proper cleanup
             subscription.subscriptionData.visualizationPanel = null;
             subscription.subscriptionData.creatingPanel = false;
           }
 
           ws.unsubscribeTopic(topicName);
-
-          // Clear visualization if unsubscribing from scan or map topics (legacy)
-          if (BlackScreenPanel.currentPanel) {
-            if (topicName === "/scan") {
-              BlackScreenPanel.currentPanel._panel.webview.postMessage({
-                command: "clear_scan",
-              });
-            } else if (topicName.includes("map")) {
-              BlackScreenPanel.currentPanel._panel.webview.postMessage({
-                command: "clear_map",
-              });
-            }
-          }
         }
 
         channels[channelName].show();
-      }
-    ),
-    vscode.commands.registerCommand(
-      `${extensionHandle}.create-subscriber`,
-      async (pub) => {
-        const ch = `${pub.nodeLabel}/${pub.label}`;
-        channels[ch] = channels[ch] || vscode.window.createOutputChannel(ch);
-        channels[ch].show();
-
-        const outputDir = path.join(context.extensionPath, "output-window");
-        const replInstance = await REPL.New(
-          outputDir,
-          `${generateTimestamp()}-${pub.address}-${pub.nodeLabel}-${
-            pub.label
-          }.py`
-        );
-
-        vscode.workspace.onDidChangeTextDocument((event) => {
-          if (event.document === replInstance.vscodeDocument) {
-            for (const change of event.contentChanges) {
-              if (change.text === "\n") {
-                replInstance.lineTriggered = change.range.start.line;
-                if (replInstance.pyprocess) {
-                  replInstance.pyprocess.stdin.write(
-                    replInstance.vscodeDocument.lineAt(change.range.start.line)
-                      .text + "\n"
-                  );
-                }
-              }
-            }
-          }
-        });
       }
     ),
     vscode.commands.registerCommand(
@@ -427,7 +383,6 @@ function activate(context) {
           : "/" + treeItem.label;
         const messageType = treeItem.messageType || "unknown";
 
-        // Open visualization panel directly
         VisualizationPanel.createOrShow(
           context.extensionUri,
           topicName,

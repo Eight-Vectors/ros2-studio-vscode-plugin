@@ -291,8 +291,11 @@ class VisualizationPanel {
           border-color: #007acc;
         }
         #canvas {
-          background-color: #f0f0f0;
+          background-color: #0d0d0d;
           margin: 10px;
+          border: 1px solid #333333;
+          border-radius: 4px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
           display: block;
         }
         #raw-data {
@@ -587,15 +590,16 @@ class VisualizationPanel {
           canvas.height = canvasSize;
           canvas.style.display = 'block';
           ctx.clearRect(0, 0, canvasSize, canvasSize);
-          // Background - gradient from dark gray to light gray
+          // Background - dark theme with subtle gradient
           const gradient = ctx.createRadialGradient(canvasSize/2, canvasSize/2, 0, canvasSize/2, canvasSize/2, canvasSize/2);
-          gradient.addColorStop(0, '#f0f0f0'); // Light gray at center
-          gradient.addColorStop(1, '#808080'); // Medium gray at edges
+          gradient.addColorStop(0, '#1a1a1a'); // Dark gray at center
+          gradient.addColorStop(0.7, '#0d0d0d'); // Darker toward edges
+          gradient.addColorStop(1, '#000000'); // Black at edges
           ctx.fillStyle = gradient;
           ctx.fillRect(0, 0, canvasSize, canvasSize);
-          // Grid
-          ctx.strokeStyle = '#999999';
-          ctx.lineWidth = 1;
+          // Grid with subtle styling
+          ctx.strokeStyle = '#333333';
+          ctx.lineWidth = 0.5;
           for (let i = 0; i <= 10; i++) {
             const pos = (canvasSize / 10) * i;
             ctx.beginPath();
@@ -605,34 +609,90 @@ class VisualizationPanel {
             ctx.lineTo(canvasSize, pos);
             ctx.stroke();
           }
+          // Concentric circles for distance reference
+          ctx.strokeStyle = '#2a2a2a';
+          ctx.lineWidth = 0.5;
+          ctx.setLineDash([5, 5]);
+          for (let i = 1; i <= 4; i++) {
+            ctx.beginPath();
+            ctx.arc(canvasSize/2, canvasSize/2, (canvasSize * 0.4 * i) / 4, 0, 2 * Math.PI);
+            ctx.stroke();
+          }
+          ctx.setLineDash([]);
           ctx.save();
           ctx.translate(canvasSize / 2, canvasSize / 2);
-          // Origin
-          ctx.strokeStyle = '#0066cc'; // Blue for origin
-          ctx.lineWidth = 3;
+          // Origin with enhanced visibility
+          ctx.strokeStyle = '#ffffff'; // White for origin
+          ctx.lineWidth = 2;
           ctx.beginPath();
-          ctx.moveTo(-10, 0);
-          ctx.lineTo(10, 0);
-          ctx.moveTo(0, -10);
-          ctx.lineTo(0, 10);
+          ctx.moveTo(-15, 0);
+          ctx.lineTo(15, 0);
+          ctx.moveTo(0, -15);
+          ctx.lineTo(0, 15);
           ctx.stroke();
-          // Scan points
-          ctx.fillStyle = '#ff3333'; // Red for scan points (better visibility)
+          // Origin circle
+          ctx.beginPath();
+          ctx.arc(0, 0, 5, 0, 2 * Math.PI);
+          ctx.fillStyle = '#ffffff';
+          ctx.fill();
+          // Scan points with enhanced visualization
           const maxRange = Math.max(...data.ranges.filter(r => r > 0 && r < Infinity));
           const scale = (canvasSize * 0.4) / maxRange;
           const angleIncrement = data.angle_increment || 
             (data.angle_max - data.angle_min) / data.ranges.length;
+          
+          // Draw scan lines for better visualization
+          ctx.strokeStyle = 'rgba(0, 255, 100, 0.1)'; // Transparent green
+          ctx.lineWidth = 1;
           data.ranges.forEach((range, i) => {
             if (range > 0 && range < data.range_max) {
               const angle = data.angle_min + (i * angleIncrement);
               const x = range * Math.cos(angle) * scale;
               const y = -range * Math.sin(angle) * scale;
-              ctx.fillRect(x - 1, y - 1, 2, 2);
+              ctx.beginPath();
+              ctx.moveTo(0, 0);
+              ctx.lineTo(x, y);
+              ctx.stroke();
+            }
+          });
+          
+          // Draw scan points with glow effect
+          data.ranges.forEach((range, i) => {
+            if (range > 0 && range < data.range_max) {
+              const angle = data.angle_min + (i * angleIncrement);
+              const x = range * Math.cos(angle) * scale;
+              const y = -range * Math.sin(angle) * scale;
+              
+              // Outer glow
+              ctx.fillStyle = 'rgba(0, 255, 100, 0.3)';
+              ctx.fillRect(x - 3, y - 3, 6, 6);
+              
+              // Inner bright point
+              ctx.fillStyle = '#00ff64'; // Bright green
+              ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
             }
           });
           ctx.restore();
+          // Add field of view indicator
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([10, 5]);
+          const fovRadius = canvasSize * 0.4;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          const startX = fovRadius * Math.cos(data.angle_min);
+          const startY = -fovRadius * Math.sin(data.angle_min);
+          ctx.lineTo(startX, startY);
+          ctx.moveTo(0, 0);
+          const endX = fovRadius * Math.cos(data.angle_max);
+          const endY = -fovRadius * Math.sin(data.angle_max);
+          ctx.lineTo(endX, endY);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
           const validRanges = data.ranges.filter(r => r > 0 && r < data.range_max).length;
-          info.textContent = \`LaserScan: \${validRanges}/\${data.ranges.length} valid points, Max range: \${maxRange.toFixed(2)}m\`;
+          const fovDegrees = ((data.angle_max - data.angle_min) * 180 / Math.PI).toFixed(1);
+          info.textContent = \`LaserScan: \${validRanges}/\${data.ranges.length} points | Max range: \${maxRange.toFixed(2)}m | FOV: \${fovDegrees}°\`;
         }
         let urdfScene = null;
         let urdfRenderer = null;

@@ -1,12 +1,27 @@
 {
   "name": "vscode-ros-extension",
-  "displayName": "vscode-ros-extension",
-  "description": "",
+  "displayName": "ROS Bridge Extension",
+  "description": "Connect to ROS systems via rosbridge, visualize topics, call services, and interact with ROS nodes directly from VS Code",
   "version": "0.0.1",
+  "publisher": "YOUR-PUBLISHER-ID",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR-USERNAME/vscode-ros-extension"
+  },
+  "keywords": [
+    "ros",
+    "robotics",
+    "rosbridge",
+    "visualization",
+    "robot"
+  ],
+  "icon": "media/industrial-robot.png",
   "engines": {
     "vscode": "^1.93.0"
   },
   "categories": [
+    "Visualization",
+    "Programming Languages",
     "Other"
   ],
   "activationEvents": [],
@@ -19,7 +34,8 @@
       },
       {
         "command": "vscode-ros-extension.disconnect-bridge",
-        "title": "Disconnect"
+        "title": "Disconnect",
+        "icon": "$(debug-disconnect)"
       },
       {
         "command": "vscode-ros-extension.refresh-connections",
@@ -29,14 +45,6 @@
       {
         "command": "vscode-ros-extension.toggle-subscription",
         "title": "Subscribe"
-      },
-      {
-        "command": "vscode-ros-extension.create-subscriber",
-        "title": "Create subscription"
-      },
-      {
-        "command": "vscode-ros-extension.publish-subscriber",
-        "title": "Run subscription"
       },
       {
         "command": "vscode-ros-extension.visualize-topic",
@@ -58,13 +66,7 @@
         }
       }
     },
-    "keybindings": [
-      {
-        "command": "vscode-ros-extension.publish-subscriber",
-        "key": "ctrl+shift+k",
-        "when": "editorTextFocus"
-      }
-    ],
+    "keybindings": [],
     "viewsWelcome": [
       {
         "view": "extNodesView",
@@ -92,18 +94,19 @@
     "menus": {
       "view/title": [
         {
+          "command": "vscode-ros-extension.disconnect-bridge",
+          "when": "view == extNodesView && vscode-ros-extension.isConnected",
+          "group": "navigation@1"
+        },
+        {
           "command": "vscode-ros-extension.refresh-connections",
-          "when": "view == extNodesView",
-          "group": "navigation"
+          "when": "view == extNodesView && vscode-ros-extension.isConnected",
+          "group": "navigation@2"
         }
       ],
       "view/item/context": [
         {
           "command": "vscode-ros-extension.toggle-subscription",
-          "when": "view == extNodesView && viewItem == publisher"
-        },
-        {
-          "command": "vscode-ros-extension.create-subscriber",
           "when": "view == extNodesView && viewItem == publisher"
         },
         {

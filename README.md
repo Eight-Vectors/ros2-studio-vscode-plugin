@@ -1,62 +1,102 @@
-# vscode-ros-extension README
+# ROS Bridge Extension for Visual Studio Code
 
-## Features
+[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/YOUR-PUBLISHER-ID.vscode-ros-extension)](https://marketplace.visualstudio.com/items?itemName=YOUR-PUBLISHER-ID.vscode-ros-extension)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-- Display of ros2 `nodes`/`topics`/`action_clients`/`server_clients` from the server connected to dds bridge.
-- Subscribe and unsubscribe ros2 `publishers`.
-- Advanced visualization support:
-  - **Occupancy Grid Maps** - 2D map visualization with zoom and pan
-  - **Laser Scan Data** - Real-time laser scan point cloud display
-  - **URDF Robot Models** - 3D robot visualization with proper coordinate transformations
+Connect to ROS systems via rosbridge WebSocket protocol directly from VS Code. Visualize topics, call services, and interact with ROS nodes without leaving your development environment.
+
+## 🚀 Features
+
+### Core Functionality
+
+- **ROS Entity Discovery** - Browse nodes, topics, services, publishers, and subscribers in a tree view
+- **Topic Subscriptions** - Subscribe/unsubscribe to ROS topics with real-time message display
+- **Service Calls** - Call ROS services with JSON parameters and view responses
+- **WebSocket Connection** - Connect to ROS systems via rosbridge WebSocket protocol
+
+### Advanced Visualization
+
+- **Occupancy Grid Maps** - 2D map visualization with zoom and pan
+- **Laser Scan Data** - Real-time laser scan point cloud display
+- **URDF Robot Models** - 3D robot visualization with proper coordinate transformations
 - Multiple view modes for all visualizations:
   - **Graphical** - Interactive visual representation
   - **Raw Data** - JSON/XML data with syntax highlighting
   - **Both** - Side-by-side graphical and raw data views
 - Copy to clipboard functionality for raw data
 - Improved scroll handling for streaming data visualization
-- REPL environment **in progress**
 
-## Debugging Setup
+### Developer Tools
 
-Follow these steps to debug/test **vscode-ros-extension** inside vscode editor.
+- **Auto-reconnection** - Automatic reconnection to rosbridge on disconnect
+- **Configurable Connection** - Custom WebSocket URL configuration
 
-### Prerequisites
+## 📋 Requirements
 
-- [Visual Studio Code](https://code.visualstudio.com/download)
-- [Node JS](https://nodejs.org/en)
+- Visual Studio Code 1.93.0 or higher
+- ROS system with rosbridge_server running
+- WebSocket connection to rosbridge (default: `ws://localhost:9090`)
 
-### VSCode : Debug
+## 🔧 Installation
 
-To debug/test the extension on vscode editor:
+### From VS Code Marketplace
 
-- Clone the repository and change directory to the repostiory.
+1. Open VS Code
+2. Go to Extensions (Ctrl+Shift+X)
+3. Search for "ROS Bridge Extension"
+4. Click Install
 
-```bash
-git clone <repository_url>
-cd <repository_folder>
-code .
-```
+### From Source
 
-- Press `F5` to launch the extension in a new VSCode window.
+1. Clone the repository
+   ```bash
+   git clone https://github.com/USERNAME/vscode-ros-extension
+   cd vscode-ros-extension
+   ```
+2. Install dependencies
+   ```bash
+   npm install
+   ```
+3. Open in VS Code and press F5 to launch
 
-## Extension Settings
+## ⚙️ Configuration
 
-This extension contributes the following settings:
+### Extension Settings
 
-### Commands contributions
+| Setting                             | Description             | Default               |
+| ----------------------------------- | ----------------------- | --------------------- |
+| `vscode-ros-extension.rosbridgeUrl` | Rosbridge WebSocket URL | `ws://localhost:9090` |
 
-- `vscode-ros-extension.connect-bridge`: Connect to remote cluster with zenoh ros2dds bridge running.
-- `vscode-ros-extension.refresh-connections`: Refresh nodes from the connected cluster.
-- `vscode-ros-extension.toggle-subscription`: Sub/unsub available topics.
-- `vscode-ros-extension.refresh-connections`: Create a subscriber `N/A`.
-- `vscode-ros-extension.refresh-connections`: Publish the subscriber `N/A`.
+### Available Commands
 
-<!-- ### Configuration contributions
+| Command              | Description                 | Access                      |
+| -------------------- | --------------------------- | --------------------------- |
+| `Connect to Remote`  | Connect to rosbridge server | Command Palette / Tree View |
+| `Disconnect`         | Disconnect from rosbridge   | Context Menu                |
+| `Refresh connection` | Refresh ROS entities        | Tree View Button            |
+| `Subscribe`          | Subscribe to topic          | Context Menu on Publishers  |
+| `Visualize Topic`    | Open visualization panel    | Context Menu                |
+| `Call Service`       | Call a ROS service          | Context Menu on Services    |
 
-- `vscode-ros-extension.tcpPort`: Set tcp port to listen for `default "7447"`.
-- `vscode-ros-extension.websocketPort`: Set tcp port to listen for `default "5001"`. -->
+## 📖 Usage
 
-## Usage
+### Getting Started
+
+1. **Start rosbridge** on your ROS system:
+
+   ```bash
+   roslaunch rosbridge_server rosbridge_websocket.launch
+   ```
+
+2. **Connect to ROS**:
+
+   - Click the robot icon in the activity bar
+   - Click "Connect" or use Command Palette: `Connect to Remote`
+   - Default connection is `ws://localhost:9090`
+
+3. **Browse ROS entities**:
+   - Expand the tree to see nodes, topics, and services
+   - Right-click for context actions
 
 ### Visualization Features
 
@@ -71,8 +111,26 @@ This extension contributes the following settings:
    - Scroll to zoom
    - Right-click drag to pan
 
-### Supported Message Types
+### Supported Visualization Types
 
-- `nav_msgs/OccupancyGrid` - 2D occupancy grid maps
-- `sensor_msgs/LaserScan` - Laser scan data visualization
-- `std_msgs/String` (containing URDF XML) - 3D robot model visualization
+| Message Type             | Visualization | Description                              |
+| ------------------------ | ------------- | ---------------------------------------- |
+| `nav_msgs/OccupancyGrid` | 2D Map        | Interactive occupancy grid with zoom/pan |
+| `sensor_msgs/LaserScan`  | Point Cloud   | Real-time laser scan visualization       |
+| `std_msgs/String` (URDF) | 3D Model      | Robot model with Three.js renderer       |
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🏢 About
+
+This extension is developed and maintained by EightVectors. For commercial support and custom development, please contact us at [email@company.com].
+
+## 🐛 Known Issues
+
+- Large message rates may impact performance
+
+## 📮 Support
+
+For issues and feature requests, please use the [GitHub issue tracker](https://github.com/YOUR-USERNAME/vscode-ros-extension/issues).

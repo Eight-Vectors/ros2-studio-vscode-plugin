@@ -1,11 +1,9 @@
 window.addEventListener("message", (event) => {
   const message = event.data;
-  console.log("Message received: ", message);
 
   switch (message.command) {
     case "map_data":
       mapdata = message.data;
-      console.log("Map", mapdata);
       const canvasWidth = mapdata.width;
       const canvasHeight = mapdata.height;
       ctx.translate(canvasWidth / 2, canvasHeight / 2);
@@ -30,7 +28,6 @@ window.addEventListener("message", (event) => {
       const angle_max = scanObj.angle_max;
       const angle_increment = scanObj.angle_increment;
       const ranges = scanObj.ranges;
-      console.log("MapData From Scan", mapdata);
 
       ranges.forEach((dp, idx) => {
         const angle = angle_min + idx * angle_increment;

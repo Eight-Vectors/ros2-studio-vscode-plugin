@@ -144,7 +144,7 @@ class PublishersProvider {
 
   setRosbridgeClient(client) {
     this.rosbridgeClient = client;
-    this.channel.appendLine("Rosbridge client set in tree provider");
+    // Rosbridge client set
   }
 
   refresh() {
@@ -198,21 +198,14 @@ class PublishersProvider {
   }
 
   async getNodes(tree) {
-    this.channel.appendLine(
-      `getNodes called - rosbridgeClient: ${!!this
-        .rosbridgeClient}, isConnected: ${
-        this.rosbridgeClient ? this.rosbridgeClient.isConnected() : "N/A"
-      }`
-    );
+    // Getting nodes from rosbridge
 
     if (this.rosbridgeClient && this.rosbridgeClient.isConnected()) {
       // Use rosbridge to get nodes
-      this.channel.appendLine("Using rosbridge to get nodes...");
+      // Using rosbridge to get nodes
       return new Promise((resolve) => {
         this.rosbridgeClient.getNodes((nodes) => {
-          this.channel.appendLine(
-            `Received ${nodes.length} nodes from rosbridge`
-          );
+          // Received nodes from rosbridge
           const nodeItems = nodes.map(
             (nodeName) =>
               new Node(

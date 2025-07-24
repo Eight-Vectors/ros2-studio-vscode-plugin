@@ -2,7 +2,7 @@ const ROSLIB = require("roslib");
 const vscode = require("vscode");
 
 class RosbridgeClient {
-  constructor(url = "ws://4.145.88.116:9090", pChannel) {
+  constructor(url = "ws://localhost:9090", pChannel) {
     this.url = url;
     this.pChannel = pChannel;
     this.ros = null;
@@ -22,14 +22,9 @@ class RosbridgeClient {
         url: this.url,
       });
 
-      this.pChannel.appendLine(
-        `Attempting to connect to rosbridge at ${this.url}`
-      );
-
+      // Attempting to connect
       this.ros.on("connection", () => {
-        this.pChannel.appendLine(
-          `Connected to rosbridge server at ${this.url}`
-        );
+        this.pChannel.appendLine("Connected to ROS bridge");
         vscode.window.showInformationMessage("Connected to ROS bridge");
         resolve();
       });
@@ -156,7 +151,7 @@ class RosbridgeClient {
         const details = {
           subscribing: subscriptions || [],
           publishing: publications || [],
-          services: services || []
+          services: services || [],
         };
         callback(details);
       },
@@ -170,22 +165,13 @@ class RosbridgeClient {
   }
 
   getNodes(callback) {
-    this.pChannel.appendLine(
-      `getNodes called - ros: ${!!this.ros}, isConnected: ${
-        this.ros ? this.ros.isConnected : "N/A"
-      }`
-    );
-
     if (!this.ros || !this.ros.isConnected) {
-      this.pChannel.appendLine("No rosbridge connection available");
       callback([]);
       return;
     }
 
-    this.pChannel.appendLine("Calling ros.getNodes...");
     this.ros.getNodes(
       (nodes) => {
-        this.pChannel.appendLine(`Found ${nodes.length} ROS nodes`);
         callback(nodes);
       },
       (error) => {
@@ -212,8 +198,6 @@ class RosbridgeClient {
         }));
 
         // this.pChannel.appendLine(`Result: ${JSON.stringify(result, null, 2)}`);
-
-        this.pChannel.appendLine(`Found ${topics.length} ROS topics`);
         callback(topicsWithTypes);
       },
       (error) => {
@@ -225,14 +209,12 @@ class RosbridgeClient {
 
   getServices(callback) {
     if (!this.ros || !this.ros.isConnected) {
-      this.pChannel.appendLine("No rosbridge connection available");
       callback([]);
       return;
     }
 
     this.ros.getServices(
       (services) => {
-        this.pChannel.appendLine(`Found ${services.length} ROS services`);
         callback(services);
       },
       (error) => {
