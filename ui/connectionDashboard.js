@@ -68,8 +68,6 @@ class ConnectionDashboard {
         this._systemInfo.topics = topics || [];
         this._updateDashboard();
       });
-
-      // Removed services fetching to reduce clutter
     } catch (error) {
       console.error("Error updating system info:", error);
     }

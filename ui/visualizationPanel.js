@@ -577,7 +577,7 @@ class VisualizationPanel {
             pixels[i * 4 + 3] = 255;
           }
           ctx.putImageData(imageData, 0, 0);
-          info.textContent = \`Map: \${width}x\${height} pixels, Resolution: \${resolution}m/pixel\`;
+          info.textContent = '';
         }
         function renderLaserScan(data, canvas, info) {
           if (!data.ranges || data.angle_min === undefined || data.angle_max === undefined) {

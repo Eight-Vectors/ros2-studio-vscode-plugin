@@ -46,18 +46,6 @@ Connect to ROS systems via rosbridge WebSocket protocol directly from VS Code. V
 3. Search for "ROS Bridge Extension"
 4. Click Install
 
-### From Source
-
-1. Clone the repository
-   ```bash
-   git clone https://github.com/USERNAME/vscode-ros-extension
-   cd vscode-ros-extension
-   ```
-2. Install dependencies
-   ```bash
-   npm install
-   ```
-3. Open in VS Code and press F5 to launch
 
 ## ⚙️ Configuration
 

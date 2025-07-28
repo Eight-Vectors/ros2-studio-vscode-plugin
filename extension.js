@@ -1,10 +1,11 @@
-const path = require("path");
 const vscode = require("vscode");
 const RosbridgeClient = require("./rosbridge");
 const { PublishersProvider } = require("./ui/tree");
 const { VisualizationPanel } = require("./ui/visualizationPanel");
 const ConnectionDashboard = require("./ui/connectionDashboard");
-const { generateTimestamp, extensionHandle } = require("./utils/helpers");
+const ParametersPanel = require("./ui/parametersPanel");
+const BagRecorderPanel = require("./ui/bagRecorderPanel");
+const { extensionHandle } = require("./utils/helpers");
 
 function processMapData(mapData, channels) {
   try {
@@ -103,14 +104,17 @@ function handleGenericServiceResult(serviceName, result, channels) {
 }
 
 function activate(context) {
+  // Set initial connection state
   vscode.commands.executeCommand('setContext', 'vscode-ros-extension.isConnected', false);
   
   let bridge = [];
   let channels = {};
   let ws = null;
 
+  // Create main output channel for extension logs
   channels["main"] = vscode.window.createOutputChannel(extensionHandle);
 
+  // Create and register tree view provider
   let tree = new PublishersProvider(bridge, extensionHandle, channels["main"]);
   vscode.window.registerTreeDataProvider("extNodesView", tree);
 
@@ -392,11 +396,62 @@ function activate(context) {
       }
     ),
     vscode.commands.registerCommand(
+      `${extensionHandle}.get-parameters`,
+      async (treeItem) => {
+        if (!treeItem || typeof treeItem !== "object" || treeItem.contextValue !== "node") {
+          vscode.window.showErrorMessage("Please select a valid ROS node");
+          return;
+        }
+
+        if (!ws || !ws.isConnected()) {
+          vscode.window.showErrorMessage("No active ROS bridge connection");
+          return;
+        }
+
+        const nodeName = treeItem.label;
+        channels["main"].appendLine(`Getting parameters for node: ${nodeName}`);
+        
+        ParametersPanel.createOrShow(
+          context.extensionUri,
+          ws,
+          nodeName
+        );
+      }
+    ),
+    vscode.commands.registerCommand(
       `${extensionHandle}.reset-visualization-preference`,
       () => {
         vscode.window.showInformationMessage(
           "Visualization view mode will be requested for each topic subscription."
         );
+      }
+    ),
+    vscode.commands.registerCommand(
+      `${extensionHandle}.add-to-bag-recorder`,
+      async (treeItem) => {
+        if (!treeItem || typeof treeItem !== "object") {
+          vscode.window.showErrorMessage("Invalid topic selection");
+          return;
+        }
+
+        const topicName = treeItem.label.startsWith("/")
+          ? treeItem.label
+          : "/" + treeItem.label;
+        const messageType = treeItem.messageType || "unknown";
+
+        // Create panel if it doesn't exist
+        if (!BagRecorderPanel.currentPanel) {
+          BagRecorderPanel.createOrShow(context.extensionUri);
+        }
+
+        // Add topic to the recorder
+        BagRecorderPanel.addTopic(topicName, messageType);
+      }
+    ),
+    vscode.commands.registerCommand(
+      `${extensionHandle}.open-bag-recorder`,
+      () => {
+        BagRecorderPanel.createOrShow(context.extensionUri);
       }
     )
   );
