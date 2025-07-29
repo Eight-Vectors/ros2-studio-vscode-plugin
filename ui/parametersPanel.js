@@ -77,7 +77,7 @@ class ParametersPanel {
     this._refreshParameters();
   }
 
-  _refreshParameters(forceRefresh = false) {
+  _refreshParameters() {
     this._panel.webview.postMessage({
       command: "loading",
       message: "Loading parameters..."
@@ -93,7 +93,7 @@ class ParametersPanel {
         
         // Load parameters from manually added list
         if (this._manualParameterNames.length > 0) {
-          this._rosbridgeClient.getParameterValues(this._manualParameterNames, (params, err) => {
+          this._rosbridgeClient.getParameterValues(this._manualParameterNames, (params) => {
             this._parameters = params.filter(p => p.value !== null);
             this._panel.webview.postMessage({
               command: "updateParameters",
@@ -163,7 +163,7 @@ class ParametersPanel {
             parsedValue = parseInt(value, 10);
           }
         }
-      } catch (e) {
+      } catch {
         // Not valid JSON, try other parsing
         if (value === "true" || value === "false") {
           parsedValue = value === "true";

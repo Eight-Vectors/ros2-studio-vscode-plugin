@@ -1,11 +1,18 @@
 const vscode = require("vscode");
-const RosbridgeClient = require("./rosbridge");
-const { PublishersProvider } = require("./ui/tree");
-const { VisualizationPanel } = require("./ui/visualizationPanel");
-const ConnectionDashboard = require("./ui/connectionDashboard");
-const ParametersPanel = require("./ui/parametersPanel");
-const BagRecorderPanel = require("./ui/bagRecorderPanel");
-const { extensionHandle } = require("./utils/helpers");
+
+let RosbridgeClient, PublishersProvider, VisualizationPanel, ConnectionDashboard, ParametersPanel, BagRecorderPanel, extensionHandle;
+
+try {
+  RosbridgeClient = require("./rosbridge");
+  ({ PublishersProvider } = require("./ui/tree"));
+  ({ VisualizationPanel } = require("./ui/visualizationPanel"));
+  ConnectionDashboard = require("./ui/connectionDashboard");
+  ParametersPanel = require("./ui/parametersPanel");
+  BagRecorderPanel = require("./ui/bagRecorderPanel");
+  ({ extensionHandle } = require("./utils/helpers"));
+} catch (error) {
+  vscode.window.showErrorMessage(`Module load error: ${error.message}`);
+}
 
 function processMapData(mapData, channels) {
   try {
@@ -15,9 +22,6 @@ function processMapData(mapData, channels) {
 
     const { width, height, resolution, origin } = mapData.info;
 
-    channels["main"].appendLine(
-      `Processing map: ${width}x${height} pixels, resolution: ${resolution}`
-    );
 
     const cleanMapData = {
       info: {
@@ -37,9 +41,6 @@ function processMapData(mapData, channels) {
 
     if (mapData.data && mapData.data.length > 0) {
       cleanMapData.data = Array.from(mapData.data);
-      channels["main"].appendLine(
-        `Converted ${cleanMapData.data.length} map data points`
-      );
     }
 
     return cleanMapData;
@@ -104,15 +105,16 @@ function handleGenericServiceResult(serviceName, result, channels) {
 }
 
 function activate(context) {
-  // Set initial connection state
-  vscode.commands.executeCommand('setContext', 'vscode-ros-extension.isConnected', false);
+  try {
+    // Set initial connection state
+    vscode.commands.executeCommand('setContext', 'vscode-ros-extension.isConnected', false);
   
   let bridge = [];
   let channels = {};
   let ws = null;
 
   // Create main output channel for extension logs
-  channels["main"] = vscode.window.createOutputChannel(extensionHandle);
+  channels["main"] = vscode.window.createOutputChannel("ROS Bridge Extension");
 
   // Create and register tree view provider
   let tree = new PublishersProvider(bridge, extensionHandle, channels["main"]);
@@ -140,9 +142,18 @@ function activate(context) {
           "ws://localhost:9090"
         );
         const customUrl = await vscode.window.showInputBox({
-          placeHolder: rosbridgeUrl,
-          prompt: "Rosbridge WebSocket URL",
+          placeHolder: "ws://localhost:9090",
+          prompt: "Enter ROS Bridge WebSocket URL (e.g., ws://192.168.1.100:9090)",
           value: rosbridgeUrl,
+          validateInput: (value) => {
+            if (!value) {
+              return "URL is required";
+            }
+            if (!value.startsWith("ws://") && !value.startsWith("wss://")) {
+              return "URL must start with ws:// or wss://";
+            }
+            return null;
+          }
         });
 
         if (customUrl) {
@@ -334,7 +345,7 @@ function activate(context) {
     ),
     vscode.commands.registerCommand(
       `${extensionHandle}.call-service`,
-      async (serviceName, nodeName) => {
+      async (serviceName) => {
         if (!ws || !ws.isConnected()) {
           vscode.window.showErrorMessage("Not connected to ROS bridge");
           return;
@@ -359,7 +370,7 @@ function activate(context) {
         let request;
         try {
           request = JSON.parse(requestStr || "{}");
-        } catch (e) {
+        } catch {
           vscode.window.showErrorMessage("Invalid JSON format");
           return;
         }
@@ -372,27 +383,6 @@ function activate(context) {
 
           handleServiceResult(serviceName, serviceType, result, channels);
         });
-      }
-    ),
-    vscode.commands.registerCommand(
-      `${extensionHandle}.visualize-topic`,
-      async (treeItem) => {
-        if (!treeItem || typeof treeItem !== "object") {
-          vscode.window.showErrorMessage("Invalid topic selection");
-          return;
-        }
-
-        const topicName = treeItem.label.startsWith("/")
-          ? treeItem.label
-          : "/" + treeItem.label;
-        const messageType = treeItem.messageType || "unknown";
-
-        VisualizationPanel.createOrShow(
-          context.extensionUri,
-          topicName,
-          messageType,
-          null
-        );
       }
     ),
     vscode.commands.registerCommand(
@@ -409,7 +399,6 @@ function activate(context) {
         }
 
         const nodeName = treeItem.label;
-        channels["main"].appendLine(`Getting parameters for node: ${nodeName}`);
         
         ParametersPanel.createOrShow(
           context.extensionUri,
@@ -457,6 +446,13 @@ function activate(context) {
   );
 
   channels["main"].show();
+  } catch (error) {
+    vscode.window.showErrorMessage(`Failed to activate ROS Bridge Extension: ${error.message}`);
+    throw error;
+  }
 }
 
-module.exports = { activate };
+function deactivate() {
+}
+
+module.exports = { activate, deactivate };

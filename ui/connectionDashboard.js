@@ -69,7 +69,8 @@ class ConnectionDashboard {
         this._updateDashboard();
       });
     } catch (error) {
-      console.error("Error updating system info:", error);
+      // Show error to user as it's likely a rosbridge connection issue
+      vscode.window.showErrorMessage(`Failed to update ROS system info: ${error.message || error}`);
     }
   }
 
@@ -101,7 +102,7 @@ class ConnectionDashboard {
 
     // Handle messages from webview (if needed in future)
     this._panel.webview.onDidReceiveMessage(
-      (message) => {
+      () => {
         // Handle any future messages here
       },
       null,

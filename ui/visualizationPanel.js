@@ -60,7 +60,7 @@ class VisualizationPanel {
           existingPanel.updateData(initialData);
         }
         return existingPanel;
-      } catch (e) {
+      } catch {
         // Panel was disposed but not properly cleaned up, remove it
         VisualizationPanel.currentPanels.delete(panelKey);
       }
@@ -138,7 +138,9 @@ class VisualizationPanel {
         if (data.data.includes("<robot") && data.data.includes("</robot>")) {
           return "URDF";
         }
-      } catch (e) {}
+      } catch {
+        // Ignore parsing errors for type detection
+      }
     }
 
     return messageType;
@@ -542,7 +544,6 @@ class VisualizationPanel {
                 info.textContent = 'Visualization not available for this message type';
             }
           } catch (e) {
-            console.error('Visualization error:', e);
             info.textContent = 'Error rendering visualization: ' + e.message;
           }
         }

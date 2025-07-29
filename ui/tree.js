@@ -117,15 +117,6 @@ class ActionClient extends vscode.TreeItem {
   }
 }
 
-class ServiceClient extends vscode.TreeItem {
-  constructor(label, nodeLabel, address, collapsibleState) {
-    super(label, collapsibleState);
-    this.nodeLabel = nodeLabel;
-    this.address = address;
-    this.contextValue = "serviceClient";
-    this.iconPath = new vscode.ThemeIcon("server-process");
-  }
-}
 
 class PublishersProvider {
   constructor(bridgeAddress, extHandle, channel) {

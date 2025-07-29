@@ -1,5 +1,3 @@
-const vscode = require("vscode");
-
 function logOutputChannel(ch, level, value) {
   switch (level) {
     case "error":

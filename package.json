@@ -4,18 +4,52 @@
   "description": "Connect to ROS systems via rosbridge, visualize topics, call services, and interact with ROS nodes directly from VS Code",
   "version": "0.0.1",
   "publisher": "YOUR-PUBLISHER-ID",
+  "icon": "media/industrial-robot.png",
+  "galleryBanner": {
+    "color": "#1e2327",
+    "theme": "dark"
+  },
+  "homepage": "https://github.com/Eight-Vectors/vscode-ros-extension#readme",
+  "bugs": {
+    "url": "https://github.com/Eight-Vectors/vscode-ros-extension/issues"
+  },
+  "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/YOUR-USERNAME/vscode-ros-extension"
+    "url": "https://github.com/Eight-Vectors/vscode-ros-extension.git"
   },
   "keywords": [
     "ros",
-    "robotics",
+    "ros2",
     "rosbridge",
+    "robotics",
+    "robot",
+    "websocket",
     "visualization",
-    "robot"
+    "topics",
+    "services",
+    "nodes",
+    "parameters",
+    "debugging",
+    "simulation",
+    "telemetry",
+    "sensor",
+    "laser",
+    "urdf",
+    "occupancy-grid",
+    "bag",
+    "rosbag",
+    "ros-bag",
+    "publisher",
+    "subscriber",
+    "rosapi",
+    "development",
+    "middleware",
+    "real-time",
+    "point-cloud",
+    "3d-visualization",
+    "remote-control"
   ],
-  "icon": "media/industrial-robot.png",
   "engines": {
     "vscode": "^1.93.0"
   },
@@ -25,7 +59,7 @@
     "Other"
   ],
   "activationEvents": [],
-  "main": "./extension.js",
+  "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
@@ -45,10 +79,6 @@
       {
         "command": "vscode-ros-extension.toggle-subscription",
         "title": "Subscribe"
-      },
-      {
-        "command": "vscode-ros-extension.visualize-topic",
-        "title": "Visualize Topic"
       },
       {
         "command": "vscode-ros-extension.get-parameters",
@@ -106,7 +136,7 @@
       "extContainerView": [
         {
           "id": "extNodesView",
-          "name": "List of avaiable nodes from bridge",
+          "name": "ROS Nodes",
           "icon": "media/industrial-robot.svg"
         }
       ]
@@ -135,10 +165,6 @@
           "when": "view == extNodesView && viewItem == publisher"
         },
         {
-          "command": "vscode-ros-extension.visualize-topic",
-          "when": "view == extNodesView && (viewItem == publisher || viewItem == subscribers)"
-        },
-        {
           "command": "vscode-ros-extension.disconnect-bridge",
           "when": "view == extNodesView && viewItem == nodeTree"
         },
@@ -154,14 +180,19 @@
     }
   },
   "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
     "lint": "eslint .",
-    "pretest": "npm run lint",
     "test": "vscode-test"
   },
   "devDependencies": {
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
-    "eslint": "^9.9.1"
+    "eslint": "^9.9.1",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
   },
   "dependencies": {
     "axios": "^1.7.7",

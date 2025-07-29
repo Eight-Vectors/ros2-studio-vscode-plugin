@@ -13,7 +13,6 @@ class RosbridgeClient {
 
   connect() {
     if (this.ros && this.ros.isConnected) {
-      this.pChannel.appendLine("Already connected to rosbridge");
       return Promise.resolve();
     }
 
@@ -24,19 +23,16 @@ class RosbridgeClient {
 
       // Attempting to connect
       this.ros.on("connection", () => {
-        this.pChannel.appendLine("Connected to ROS bridge");
         vscode.window.showInformationMessage("Connected to ROS bridge");
         resolve();
       });
 
       this.ros.on("error", (error) => {
-        this.pChannel.appendLine(`Rosbridge error: ${error}`);
         vscode.window.showErrorMessage(`ROS bridge error: ${error}`);
         reject(error);
       });
 
       this.ros.on("close", () => {
-        this.pChannel.appendLine("Disconnected from rosbridge server");
         vscode.window.showWarningMessage("Disconnected from ROS bridge");
         this.reconnect();
       });
@@ -45,7 +41,6 @@ class RosbridgeClient {
 
   reconnect() {
     if (this.ros && !this.ros.isConnected) {
-      this.pChannel.appendLine("Attempting to reconnect...");
       setTimeout(() => {
         this.connect();
       }, 2000);
@@ -62,13 +57,9 @@ class RosbridgeClient {
     if (existingTopic) {
       existingTopic.subscribe(callback);
       this.subscriptions.set(topicName, callback);
-      this.pChannel.appendLine(`Subscribed to existing topic: ${topicName}`);
       return existingTopic;
     }
 
-    this.pChannel.appendLine(
-      `Subscribing to topic: ${topicName} [${messageType}]`
-    );
 
     const topic = new ROSLIB.Topic({
       ros: this.ros,
@@ -79,9 +70,6 @@ class RosbridgeClient {
     topic.subscribe(callback);
     this.topics.set(topicName, topic);
     this.subscriptions.set(topicName, callback);
-    this.pChannel.appendLine(
-      `Subscribed to topic: ${topicName} [${messageType}]`
-    );
 
     return topic;
   }
@@ -94,11 +82,9 @@ class RosbridgeClient {
       topic.unsubscribe(callback);
       this.topics.delete(topicName);
       this.subscriptions.delete(topicName);
-      this.pChannel.appendLine(`Unsubscribed from topic: ${topicName}`);
       return true;
     }
 
-    this.pChannel.appendLine(`Topic not found for unsubscribe: ${topicName}`);
     return false;
   }
 
@@ -116,7 +102,6 @@ class RosbridgeClient {
 
     const rosMessage = new ROSLIB.Message(message);
     topic.publish(rosMessage);
-    this.pChannel.appendLine(`Published to topic: ${topicName}`);
 
     return true;
   }
@@ -133,7 +118,6 @@ class RosbridgeClient {
     this.ros.getNodeDetails(
       nodeName,
       (subscriptions, publications, services) => {
-        this.pChannel.appendLine(`Got details for node: ${nodeName}`);
         // Convert to object format for backward compatibility
         const details = {
           subscribing: subscriptions || [],
@@ -674,7 +658,6 @@ class RosbridgeClient {
 
       this.ros.close();
       this.ros = null;
-      this.pChannel.appendLine("Disconnected from rosbridge server");
     }
   }
 }

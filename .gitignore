@@ -2,9 +2,10 @@
 .yarnrc
 .vscode*
 /node_modules
+/dist
+*.vsix
 
 ui/visualizationPanelbk.js
 remote_scripts/
 .github/
-RELEASE_CHECKLIST.md
-PUBLISHING_GUIDE.md
+setup/

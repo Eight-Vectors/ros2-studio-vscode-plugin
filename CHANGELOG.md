@@ -4,7 +4,7 @@ All notable changes to the "vscode-ros-extension" will be documented in this fil
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.0.1] - 2024-01-29
 
 ### Added
 - Initial release of ROS Bridge Extension
@@ -21,6 +21,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - Tree view in activity bar with custom robot icon
 - Context menus for different ROS entities
 - Copy to clipboard for raw data
+- Node Parameter Configuration panel:
+  - View and edit ROS2 node parameters in real-time
+  - Type validation for bool, int, double, string, and arrays
+  - Search and filter parameters
+  - Manual mode for systems without rosapi
+- ROS2 Bag Recorder panel:
+  - Select topics for recording
+  - Generate ros2 bag record commands
+  - Topic management interface
+- Connection Dashboard showing ROS system information
 
 ### Fixed
 - URDF visualization orientation issues

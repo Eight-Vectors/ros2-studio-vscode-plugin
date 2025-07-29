@@ -30,6 +30,8 @@ Connect to ROS systems via rosbridge WebSocket protocol directly from VS Code. V
 
 - **Auto-reconnection** - Automatic reconnection to rosbridge on disconnect
 - **Configurable Connection** - Custom WebSocket URL configuration
+- **Node Parameter Configuration** - View and modify ROS2 node parameters in real-time
+- **Bag Recorder Panel** - Select topics and generate ROS2 bag record commands
 
 ## 📋 Requirements
 
@@ -46,7 +48,6 @@ Connect to ROS systems via rosbridge WebSocket protocol directly from VS Code. V
 3. Search for "ROS Bridge Extension"
 4. Click Install
 
-
 ## ⚙️ Configuration
 
 ### Extension Settings
@@ -57,14 +58,17 @@ Connect to ROS systems via rosbridge WebSocket protocol directly from VS Code. V
 
 ### Available Commands
 
-| Command              | Description                 | Access                      |
-| -------------------- | --------------------------- | --------------------------- |
-| `Connect to Remote`  | Connect to rosbridge server | Command Palette / Tree View |
-| `Disconnect`         | Disconnect from rosbridge   | Context Menu                |
-| `Refresh connection` | Refresh ROS entities        | Tree View Button            |
-| `Subscribe`          | Subscribe to topic          | Context Menu on Publishers  |
-| `Visualize Topic`    | Open visualization panel    | Context Menu                |
-| `Call Service`       | Call a ROS service          | Context Menu on Services    |
+| Command               | Description                 | Access                      |
+| --------------------- | --------------------------- | --------------------------- |
+| `Connect to Remote`   | Connect to rosbridge server | Command Palette / Tree View |
+| `Disconnect`          | Disconnect from rosbridge   | Context Menu                |
+| `Refresh connection`  | Refresh ROS entities        | Tree View Button            |
+| `Subscribe`           | Subscribe to topic          | Context Menu on Publishers  |
+| `Visualize Topic`     | Open visualization panel    | Context Menu                |
+| `Call Service`        | Call a ROS service          | Context Menu on Services    |
+| `Get Parameters`      | View/edit node parameters   | Context Menu on Nodes       |
+| `Add to Bag Recorder` | Add topic to bag recorder   | Context Menu on Topics      |
+| `Open Bag Recorder`   | Open bag recorder panel     | Command Palette             |
 
 ## 📖 Usage
 
@@ -82,9 +86,14 @@ Connect to ROS systems via rosbridge WebSocket protocol directly from VS Code. V
    - Click "Connect" or use Command Palette: `Connect to Remote`
    - Default connection is `ws://localhost:9090`
 
+   ![Connect to ROS Bridge](media/gifs/connect-rosbridge.gif)
+
 3. **Browse ROS entities**:
+
    - Expand the tree to see nodes, topics, and services
    - Right-click for context actions
+
+   ![Browse ROS Entities](media/gifs/browse-entities.gif)
 
 ### Visualization Features
 
@@ -99,6 +108,8 @@ Connect to ROS systems via rosbridge WebSocket protocol directly from VS Code. V
    - Scroll to zoom
    - Right-click drag to pan
 
+![Topic Visualization](media/gifs/topic-visualization.gif)
+
 ### Supported Visualization Types
 
 | Message Type             | Visualization | Description                              |
@@ -106,6 +117,45 @@ Connect to ROS systems via rosbridge WebSocket protocol directly from VS Code. V
 | `nav_msgs/OccupancyGrid` | 2D Map        | Interactive occupancy grid with zoom/pan |
 | `sensor_msgs/LaserScan`  | Point Cloud   | Real-time laser scan visualization       |
 | `std_msgs/String` (URDF) | 3D Model      | Robot model with Three.js renderer       |
+
+### Node Parameter Configuration
+
+The extension provides a comprehensive parameter configuration panel for ROS2 nodes:
+
+1. **Access Parameters** - Right-click on any node in the tree view and select "Get Parameters"
+2. **Features**:
+   - View all node parameters with their current values
+   - Edit parameter values with type validation (bool, int, double, string, arrays)
+   - Real-time parameter updates
+   - Search and filter parameters by name
+   - Manual mode for when rosapi is not available
+   - Support for complex parameter types including arrays
+3. **Parameter Types Supported**:
+   - Boolean (dropdown selection)
+   - Integer and Double (with automatic type preservation)
+   - String values
+   - Arrays (JSON format with validation)
+   - Read-only display for complex objects
+
+![Node Parameters Panel](media/gifs/node-parameters.gif)
+
+### ROS2 Bag Recorder
+
+The Bag Recorder panel helps you create ROS2 bag recording commands:
+
+1. **Add Topics** - Right-click on any topic and select "Add to Bag Recorder"
+2. **Manage Topics**:
+   - View all selected topics with their message types
+   - Remove individual topics or clear all
+   - Topics are displayed with full path and message type information
+3. **Generate Command**:
+   - Click "Generate Command" to create the `ros2 bag record` command
+   - Command includes all selected topics
+   - Copy the generated command from the panel
+   - Use the command on your ROS2 machine to start recording
+4. **Access Panel** - Use Command Palette: "Open Bag Recorder" or right-click topics
+
+![Bag Recorder Panel](media/gifs/bag-recorder.gif)
 
 ## 📄 License
 
@@ -118,6 +168,10 @@ This extension is developed and maintained by EightVectors. For commercial suppo
 ## 🐛 Known Issues
 
 - Large message rates may impact performance
+
+<!-- ## 🔄 Updates and Releases
+
+For information about how updates are published and distributed, see our [Update Process Documentation](docs/UPDATE_PROCESS_SUMMARY.md). -->
 
 ## 📮 Support
 

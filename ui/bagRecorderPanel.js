@@ -3,7 +3,7 @@ const vscode = require("vscode");
 class BagRecorderPanel {
   static currentPanel = undefined;
 
-  static createOrShow(extensionUri, rosbridgeClient) {
+  static createOrShow(extensionUri) {
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
       : undefined;
@@ -48,9 +48,7 @@ class BagRecorderPanel {
     this._extensionUri = extensionUri;
     this._disposables = [];
     this._selectedTopics = new Map();
-    this._isRecording = false;
-    this._recordingStartTime = null;
-    this._recordingProcess = null;
+    this._currentCommand = null;
     this._outputChannel =
       vscode.window.createOutputChannel("ROS2 Bag Recorder");
 
@@ -71,11 +69,8 @@ class BagRecorderPanel {
           case "removeTopic":
             this._removeTopic(message.topic);
             break;
-          case "startRecording":
-            this._startRecording(message.outputPath);
-            break;
-          case "stopRecording":
-            this._stopRecording();
+          case "generateCommand":
+            this._generateCommand();
             break;
           case "browseOutputPath":
             this._browseOutputPath();
@@ -89,12 +84,6 @@ class BagRecorderPanel {
       this._disposables
     );
 
-    // Update recording status every second
-    this._statusInterval = setInterval(() => {
-      if (this._isRecording) {
-        this._updateRecordingStatus();
-      }
-    }, 1000);
   }
 
   _addTopic(topicName, topicType) {
@@ -121,27 +110,30 @@ class BagRecorderPanel {
     this._update();
   }
 
-  _startRecording(outputPath) {
+  _generateCommand() {
     if (this._selectedTopics.size === 0) {
-      vscode.window.showWarningMessage("No topics selected for recording");
+      vscode.window.showWarningMessage("No topics selected");
       return;
     }
 
     // Construct the ROS2 bag record command
     const topics = Array.from(this._selectedTopics.keys());
-    const command = this._constructBagCommand(outputPath, topics);
+    const command = this._constructBagCommand(null, topics);
+    
+    // Store the command to display in the UI
+    this._currentCommand = command;
 
     // Show the command in output channel
     this._outputChannel.clear();
     this._outputChannel.appendLine("=== ROS2 Bag Recorder ===");
     this._outputChannel.appendLine("");
     this._outputChannel.appendLine(
-      "Command that would be executed on remote machine:"
+      "Command to run on remote machine:"
     );
     this._outputChannel.appendLine("");
     this._outputChannel.appendLine(command);
     this._outputChannel.appendLine("");
-    this._outputChannel.appendLine("Topics to record:");
+    this._outputChannel.appendLine("Topics:");
     topics.forEach((topic, index) => {
       const topicInfo = this._selectedTopics.get(topic);
       this._outputChannel.appendLine(
@@ -149,55 +141,21 @@ class BagRecorderPanel {
       );
     });
     this._outputChannel.appendLine("");
-    this._outputChannel.appendLine(
-      "Output path (on remote machine): " + outputPath
-    );
-    this._outputChannel.appendLine("");
-    this._outputChannel.appendLine(
-      "⚠️  IMPORTANT: The output path must be valid on your REMOTE ROS machine, not your local machine!"
-    );
-    this._outputChannel.appendLine("");
-    this._outputChannel.appendLine("Note: To actually record, you need to:");
-    this._outputChannel.appendLine(
-      "  1. Ensure the output directory exists on the remote machine"
-    );
-    this._outputChannel.appendLine(
-      "  2. Run the bag_recorder_node.py on your remote machine"
-    );
-    this._outputChannel.appendLine(
-      "  3. Or manually run this command on the remote machine"
-    );
+    this._outputChannel.appendLine("Note: You can add -o flag to specify output path");
     this._outputChannel.show();
 
-    // Update UI state
-    this._isRecording = true;
-    this._recordingStartTime = Date.now();
+    // Update UI to show the command
     this._update();
 
-    this._panel.webview.postMessage({
-      command: "recordingStarted",
-      startTime: this._recordingStartTime,
-    });
-
     // Show info message
-    vscode.window
-      .showInformationMessage(
-        `ROS2 bag command constructed. Check the output panel for details.`,
-        "View Output"
-      )
-      .then((selection) => {
-        if (selection === "View Output") {
-          this._outputChannel.show();
-        }
-      });
+    vscode.window.showInformationMessage(
+      `ROS2 bag command generated. You can copy it from the panel.`
+    );
   }
 
   _constructBagCommand(outputPath, topics) {
     // Base command
     let command = "ros2 bag record";
-
-    // Add output path
-    command += ` -o "${outputPath}"`;
 
     // Add each topic
     topics.forEach((topic) => {
@@ -211,23 +169,6 @@ class BagRecorderPanel {
     return command;
   }
 
-  _stopRecording() {
-    this._isRecording = false;
-    this._recordingStartTime = null;
-
-    // Log stop action
-    this._outputChannel.appendLine("");
-    this._outputChannel.appendLine(
-      `[${new Date().toLocaleTimeString()}] Recording stopped by user`
-    );
-    this._outputChannel.appendLine("");
-
-    this._update();
-
-    this._panel.webview.postMessage({
-      command: "recordingStopped",
-    });
-  }
 
   _browseOutputPath() {
     vscode.window
@@ -278,17 +219,6 @@ class BagRecorderPanel {
       });
   }
 
-  _updateRecordingStatus() {
-    if (this._isRecording && this._recordingStartTime) {
-      const duration = Math.floor(
-        (Date.now() - this._recordingStartTime) / 1000
-      );
-      this._panel.webview.postMessage({
-        command: "updateDuration",
-        duration: duration,
-      });
-    }
-  }
 
   _update() {
     this._panel.webview.html = this._getHtmlContent();
@@ -296,13 +226,6 @@ class BagRecorderPanel {
 
   _getHtmlContent() {
     const topicsList = Array.from(this._selectedTopics.values());
-
-    // Get remote bag path from configuration
-    const config = vscode.workspace.getConfiguration("vscode-ros-extension");
-    const remoteBagPath = config.get("remoteBagPath", "/home/ros/bags");
-    const defaultOutputPath = `${remoteBagPath}/rosbag_${new Date()
-      .toISOString()
-      .slice(0, 10)}`;
 
     return `<!DOCTYPE html>
     <html lang="en">
@@ -564,17 +487,41 @@ class BagRecorderPanel {
             .info-icon {
                 flex-shrink: 0;
             }
+            
+            .command-display {
+                background-color: var(--vscode-textBlockQuote-background);
+                border: 1px solid var(--vscode-widget-border);
+                border-radius: 4px;
+                padding: 15px;
+                margin-top: 15px;
+                font-family: var(--vscode-editor-font-family);
+            }
+            
+            .command-label {
+                font-size: 12px;
+                color: var(--vscode-descriptionForeground);
+                text-transform: uppercase;
+                margin-bottom: 8px;
+                font-weight: 600;
+            }
+            
+            .command-text {
+                font-size: 13px;
+                color: var(--vscode-foreground);
+                word-break: break-all;
+                user-select: text;
+                cursor: text;
+                padding: 8px;
+                background-color: var(--vscode-editor-background);
+                border-radius: 3px;
+                border: 1px solid var(--vscode-input-border);
+            }
         </style>
     </head>
     <body>
         <div class="container">
             <div class="header">
                 <h1>ROS2 Bag Recorder</h1>
-                <div class="status-badge ${
-                  this._isRecording ? "recording" : "idle"
-                }">
-                    ${this._isRecording ? "Recording" : "Idle"}
-                </div>
             </div>
             
             <div class="section">
@@ -600,7 +547,7 @@ class BagRecorderPanel {
                             </div>
                             <button class="remove-button" onclick="removeTopic('${
                               topic.name
-                            }')" ${this._isRecording ? "disabled" : ""}>
+                            }')">
                                 Remove
                             </button>
                         </div>
@@ -616,74 +563,34 @@ class BagRecorderPanel {
                 </div>
             </div>
             
-            <div class="section">
-                <div class="section-title">Output Configuration</div>
-                <div class="output-section">
-                    <div class="output-path">
-                        <input type="text" 
-                               class="output-input" 
-                               id="outputPath" 
-                               placeholder="/home/remote-user/rosbags/recording_name" 
-                               value="${defaultOutputPath}"
-                               ${this._isRecording ? "disabled" : ""}>
-                        <button class="browse-button" onclick="browseOutput()" ${
-                          this._isRecording ? "disabled" : ""
-                        } title="Note: This shows local paths. Enter remote path manually.">
-                            Browse (Local)
-                        </button>
-                    </div>
-                    <div class="info-message" style="margin-top: 10px; font-size: 12px;">
-                        <span class="info-icon">ℹ️</span>
-                        <span>Enter the path on your <strong>remote machine</strong> where ROS2 is running (e.g., /home/ros/bags/). The Browse button shows local paths for reference only.</span>
-                    </div>
-                </div>
+            
+            <div class="control-buttons">
+                <button class="primary-button" onclick="generateCommand()" ${
+                  topicsList.length === 0 ? "disabled" : ""
+                }>
+                    Generate Command
+                </button>
             </div>
             
             ${
-              this._isRecording
+              this._currentCommand
                 ? `
-                <div class="stats-container">
-                    <div class="stat-item">
-                        <div class="stat-value" id="duration">00:00:00</div>
-                        <div class="stat-label">Duration</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="topicCount">${topicsList.length}</div>
-                        <div class="stat-label">Topics</div>
-                    </div>
+                <div class="command-display">
+                    <div class="command-label">ROS2 Bag Command:</div>
+                    <div class="command-text">${this._currentCommand}</div>
                 </div>
-            `
+                `
                 : ""
             }
             
-            <div class="control-buttons">
-                ${
-                  this._isRecording
-                    ? `
-                    <button class="primary-button stop" onclick="stopRecording()">
-                        Stop Recording
-                    </button>
-                `
-                    : `
-                    <button class="primary-button" onclick="startRecording()" ${
-                      topicsList.length === 0 ? "disabled" : ""
-                    }>
-                        Start Recording
-                    </button>
-                `
-                }
-            </div>
-            
             <div class="info-message">
                 <span class="info-icon">ℹ️</span>
-                <span>Recording will use the ros2 bag record command on the remote machine.</span>
+                <span>Generate the ros2 bag record command for the selected topics.</span>
             </div>
         </div>
         
         <script>
             const vscode = acquireVsCodeApi();
-            let recordingStartTime = null;
-            let durationTimer = null;
             
             function removeTopic(topicName) {
                 vscode.postMessage({ command: 'removeTopic', topic: topicName });
@@ -693,51 +600,11 @@ class BagRecorderPanel {
                 vscode.postMessage({ command: 'clearTopics' });
             }
             
-            function startRecording() {
-                const outputPath = document.getElementById('outputPath').value;
-                if (!outputPath) {
-                    alert('Please specify an output path');
-                    return;
-                }
-                vscode.postMessage({ command: 'startRecording', outputPath: outputPath });
+            function generateCommand() {
+                vscode.postMessage({ command: 'generateCommand' });
             }
             
-            function stopRecording() {
-                vscode.postMessage({ command: 'stopRecording' });
-            }
             
-            function browseOutput() {
-                vscode.postMessage({ command: 'browseOutputPath' });
-            }
-            
-            function formatDuration(seconds) {
-                const hours = Math.floor(seconds / 3600);
-                const minutes = Math.floor((seconds % 3600) / 60);
-                const secs = seconds % 60;
-                return [hours, minutes, secs]
-                    .map(v => v.toString().padStart(2, '0'))
-                    .join(':');
-            }
-            
-            window.addEventListener('message', event => {
-                const message = event.data;
-                switch (message.command) {
-                    case 'recordingStarted':
-                        recordingStartTime = message.startTime;
-                        break;
-                    case 'recordingStopped':
-                        recordingStartTime = null;
-                        break;
-                    case 'updateDuration':
-                        if (document.getElementById('duration')) {
-                            document.getElementById('duration').textContent = formatDuration(message.duration);
-                        }
-                        break;
-                    case 'updateOutputPath':
-                        document.getElementById('outputPath').value = message.path;
-                        break;
-                }
-            });
         </script>
     </body>
     </html>`;
@@ -745,14 +612,6 @@ class BagRecorderPanel {
 
   dispose() {
     BagRecorderPanel.currentPanel = undefined;
-
-    if (this._statusInterval) {
-      clearInterval(this._statusInterval);
-    }
-
-    if (this._recordingProcess) {
-      // TODO: Stop recording process
-    }
 
     // Dispose output channel
     if (this._outputChannel) {
