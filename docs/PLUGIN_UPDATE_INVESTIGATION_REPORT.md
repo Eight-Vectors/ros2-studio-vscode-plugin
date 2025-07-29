@@ -100,10 +100,6 @@ The `.github/workflows/publish.yml` workflow automatically:
    - Generate Personal Access Token (PAT)
    - Add to GitHub Secrets as `VSCE_PAT`
 
-3. **Icon Conversion**
-   - Convert SVG icon to PNG format
-   - Required for marketplace listing
-
 ### 3. Key Points
 
 - Extensions publish **immediately** (no review)

@@ -64,7 +64,6 @@ Connect to ROS systems via rosbridge WebSocket protocol directly from VS Code. V
 | `Disconnect`          | Disconnect from rosbridge   | Context Menu                |
 | `Refresh connection`  | Refresh ROS entities        | Tree View Button            |
 | `Subscribe`           | Subscribe to topic          | Context Menu on Publishers  |
-| `Visualize Topic`     | Open visualization panel    | Context Menu                |
 | `Call Service`        | Call a ROS service          | Context Menu on Services    |
 | `Get Parameters`      | View/edit node parameters   | Context Menu on Nodes       |
 | `Add to Bag Recorder` | Add topic to bag recorder   | Context Menu on Topics      |
