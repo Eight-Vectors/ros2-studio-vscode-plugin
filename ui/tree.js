@@ -180,6 +180,17 @@ class PublishersProvider {
     if (pub.isChecked) {
       return [pub.isChecked, pub.address];
     }
+    return [false];
+  }
+  
+  resetAllCheckboxes() {
+    for (const key in this.pubs) {
+      if (this.pubs[key].isChecked) {
+        this.pubs[key].isChecked = false;
+        this.pubs[key].updateIcon();
+      }
+    }
+    this._onDidChangeTreeData.fire();
   }
 
   async getTrees() {
@@ -363,7 +374,6 @@ class PublishersProvider {
         // Get node-specific details
         this.rosbridgeClient.getNodeDetails(nodeName, (details) => {
           // Check if action_clients is available in the details
-          // If not, we'll return an empty array for now
           const actionClients = details.action_clients || [];
           
           // Create action clients for this node

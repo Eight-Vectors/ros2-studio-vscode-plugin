@@ -12,6 +12,9 @@ module.exports = {
   devtool: 'nosources-source-map',
   externals: {
     vscode: 'commonjs vscode',
+    // Optional native dependencies for WebSocket performance
+    bufferutil: 'commonjs bufferutil',
+    'utf-8-validate': 'commonjs utf-8-validate',
     // Don't bundle these node modules
     'node:fs': 'commonjs fs',
     'node:path': 'commonjs path',

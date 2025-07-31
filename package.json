@@ -2,7 +2,7 @@
   "name": "vscode-ros-extension",
   "displayName": "ROS Bridge Extension",
   "description": "Connect to ROS systems via rosbridge, visualize topics, call services, and interact with ROS nodes directly from VS Code",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "YOUR-PUBLISHER-ID",
   "icon": "media/industrial-robot.png",
   "galleryBanner": {
@@ -127,7 +127,7 @@
       "activitybar": [
         {
           "id": "extContainerView",
-          "title": "Extension View Container",
+          "title": "ROS Nodes",
           "icon": "media/industrial-robot.svg"
         }
       ]
@@ -195,7 +195,6 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "axios": "^1.7.7",
     "roslib": "^1.4.1"
   }
 }

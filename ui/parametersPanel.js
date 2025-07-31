@@ -254,12 +254,12 @@ class ParametersPanel {
   }
 
   _loadStoredParameters() {
-    // For now, return empty array. In future, could use VS Code workspace storage
+    // Parameters are not persisted between sessions
     return [];
   }
 
   _saveStoredParameters() {
-    // For now, do nothing. In future, could use VS Code workspace storage
+    // Parameters are not persisted between sessions
   }
 
   _getHtmlContent() {
@@ -831,6 +831,16 @@ class ParametersPanel {
       if (disposable) {
         disposable.dispose();
       }
+    }
+  }
+  
+  static disposeAll() {
+    if (ParametersPanel.panels && ParametersPanel.panels.size > 0) {
+      const panelsToDispose = Array.from(ParametersPanel.panels.values());
+      for (const panel of panelsToDispose) {
+        panel.dispose();
+      }
+      ParametersPanel.panels.clear();
     }
   }
 }

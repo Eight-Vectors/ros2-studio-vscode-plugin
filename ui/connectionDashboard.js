@@ -40,6 +40,8 @@ class ConnectionDashboard {
       topics: [],
       connectionTime: new Date().toLocaleString(),
       messageCount: 0,
+      reconnectAttempts: 0,
+      isReconnecting: false,
     };
 
     this._updateContent(rosbridgeClient);
@@ -76,10 +78,17 @@ class ConnectionDashboard {
 
   _updateDashboard() {
     const isConnected = this._rosbridgeClient?.isConnected() || false;
+    const isReconnecting = this._rosbridgeClient?.isReconnecting || false;
+    const reconnectAttempts = this._rosbridgeClient?.reconnectAttempts || 0;
+    const maxReconnectAttempts = this._rosbridgeClient?.maxReconnectAttempts || 10;
+    
     this._panel.webview.postMessage({
       command: "updateInfo",
       data: {
         isConnected: isConnected,
+        isReconnecting: isReconnecting,
+        reconnectAttempts: reconnectAttempts,
+        maxReconnectAttempts: maxReconnectAttempts,
         url: this._rosbridgeClient?.url || "Not connected",
         connectionTime: this._systemInfo.connectionTime,
         nodeCount: this._systemInfo.nodes.length,
@@ -100,10 +109,10 @@ class ConnectionDashboard {
       this._updateSystemInfo();
     }, 1000);
 
-    // Handle messages from webview (if needed in future)
+    // Handle messages from webview
     this._panel.webview.onDidReceiveMessage(
       () => {
-        // Handle any future messages here
+        // Message handler
       },
       null,
       this._disposables
@@ -252,6 +261,10 @@ class ConnectionDashboard {
                     <span class="label">Status:</span>
                     <span class="value" id="connectionStatus">Connecting...</span>
                 </div>
+                <div class="info-row" id="reconnectRow" style="display: none;">
+                    <span class="label">Reconnect Attempts:</span>
+                    <span class="value" id="reconnectInfo">-</span>
+                </div>
                 <div class="info-row">
                     <span class="label">URL:</span>
                     <span class="value" id="connectionUrl">-</span>
@@ -288,14 +301,25 @@ class ConnectionDashboard {
                     const statusText = document.getElementById('statusText');
                     const connectionStatus = document.getElementById('connectionStatus');
                     
+                    const reconnectRow = document.getElementById('reconnectRow');
+                    const reconnectInfo = document.getElementById('reconnectInfo');
+                    
                     if (data.isConnected) {
                         statusIndicator.classList.add('connected');
                         statusText.textContent = 'Connected';
                         connectionStatus.textContent = 'Connected';
+                        reconnectRow.style.display = 'none';
+                    } else if (data.isReconnecting) {
+                        statusIndicator.classList.remove('connected');
+                        statusText.textContent = 'Reconnecting...';
+                        connectionStatus.textContent = 'Reconnecting...';
+                        reconnectRow.style.display = 'flex';
+                        reconnectInfo.textContent = data.reconnectAttempts + ' / ' + data.maxReconnectAttempts;
                     } else {
                         statusIndicator.classList.remove('connected');
                         statusText.textContent = 'Disconnected';
                         connectionStatus.textContent = 'Disconnected';
+                        reconnectRow.style.display = 'none';
                     }
                     
                     // Update connection details

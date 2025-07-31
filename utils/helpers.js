@@ -4,15 +4,21 @@ function logOutputChannel(ch, level, value) {
       ch.appendLine(
         `\u001b[31m${new Date().toLocaleTimeString()} - ERROR: ${value}\u001b[31m`
       );
+      break;
     case "info":
       ch.appendLine(
         `\u001b[33m${new Date().toLocaleTimeString()} - INFO: ${value}\u001b[33m`
       );
+      break;
     case "success":
       ch.appendLine(
         `\u001b[32m${new Date().toLocaleTimeString()} - SUCCESS: ${value}\u001b[32m`
       );
+      break;
     default:
+      ch.appendLine(
+        `${new Date().toLocaleTimeString()} - ${level.toUpperCase()}: ${value}`
+      );
       break;
   }
   ch.show();

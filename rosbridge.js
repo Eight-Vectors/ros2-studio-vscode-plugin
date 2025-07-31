@@ -9,6 +9,11 @@ class RosbridgeClient {
     this.topics = new Map();
     this.subscriptions = new Map();
     this.connectionPromise = this.connect();
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 10;
+    this.reconnectDelay = 1000; // Start with 1 second
+    this.isReconnecting = false;
+    this.shouldReconnect = true;
   }
 
   connect() {
@@ -24,6 +29,9 @@ class RosbridgeClient {
       // Attempting to connect
       this.ros.on("connection", () => {
         vscode.window.showInformationMessage("Connected to ROS bridge");
+        this.reconnectAttempts = 0; // Reset on successful connection
+        this.reconnectDelay = 1000; // Reset delay
+        this.isReconnecting = false;
         resolve();
       });
 
@@ -33,18 +41,63 @@ class RosbridgeClient {
       });
 
       this.ros.on("close", () => {
-        vscode.window.showWarningMessage("Disconnected from ROS bridge");
-        this.reconnect();
+        if (this.shouldReconnect) {
+          vscode.window.showWarningMessage("Disconnected from ROS bridge. Attempting to reconnect...");
+          this.handleReconnection();
+        } else {
+          vscode.window.showWarningMessage("Disconnected from ROS bridge");
+        }
       });
     });
   }
 
-  reconnect() {
-    if (this.ros && !this.ros.isConnected) {
-      setTimeout(() => {
-        this.connect();
-      }, 2000);
+  handleReconnection() {
+    if (this.isReconnecting || !this.shouldReconnect) {
+      return;
     }
+
+    this.isReconnecting = true;
+
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      vscode.window.showErrorMessage(
+        `Failed to reconnect to ROS bridge after ${this.maxReconnectAttempts} attempts. Please check your rosbridge server.`
+      );
+      this.isReconnecting = false;
+      return;
+    }
+
+    this.reconnectAttempts++;
+    const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 30000); // Max 30 seconds
+
+    this.pChannel.appendLine(
+      `Reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay / 1000} seconds...`
+    );
+
+    setTimeout(() => {
+      if (this.shouldReconnect) {
+        this.connectionPromise = this.connect()
+          .then(() => {
+            vscode.window.showInformationMessage("Successfully reconnected to ROS bridge");
+            this.resubscribeTopics();
+          })
+          .catch(() => {
+            this.handleReconnection();
+          });
+      }
+      this.isReconnecting = false;
+    }, delay);
+  }
+
+  resubscribeTopics() {
+    // Resubscribe to all previously subscribed topics
+    this.subscriptions.forEach((callback, topicName) => {
+      const topic = this.topics.get(topicName);
+      if (topic) {
+        this.pChannel.appendLine(`Resubscribing to topic: ${topicName}`);
+        topic.ros = this.ros; // Update ROS connection
+        topic.subscribe(callback);
+      }
+    });
   }
 
   subscribeTopic(topicName, messageType, callback) {
@@ -59,7 +112,6 @@ class RosbridgeClient {
       this.subscriptions.set(topicName, callback);
       return existingTopic;
     }
-
 
     const topic = new ROSLIB.Topic({
       ros: this.ros,
@@ -253,10 +305,6 @@ class RosbridgeClient {
         // The list of parameter names is in result.result.names
         const paramNames = result.result.names || [];
 
-        this.pChannel.appendLine(
-          `Found ${paramNames.length} parameters for node: ${nodeName}`
-        );
-
         if (paramNames.length === 0) {
           callback([], null);
           return;
@@ -276,11 +324,6 @@ class RosbridgeClient {
         getParamsService.callService(
           getRequest,
           (getResult) => {
-            // Log the raw result to understand the structure
-            this.pChannel.appendLine(
-              `Raw parameter values: ${JSON.stringify(getResult.values[0])}`
-            );
-
             // Process the parameter values
             const parameters = paramNames.map((name, index) => {
               const value = this._extractROS2ParamValue(
@@ -480,13 +523,6 @@ class RosbridgeClient {
         // Create the parameter value in ROS2 format with the original type
         const paramValue = this._createROS2ParamValue(value, originalType);
 
-        // Log for debugging
-        this.pChannel.appendLine(
-          `Setting parameter ${paramName}: value=${value}, originalType=${originalType}, paramValue=${JSON.stringify(
-            paramValue
-          )}`
-        );
-
         const request = new ROSLIB.ServiceRequest({
           parameters: [
             {
@@ -645,6 +681,8 @@ class RosbridgeClient {
   }
 
   disconnect() {
+    this.shouldReconnect = false; // Prevent reconnection attempts
+    
     if (this.ros) {
       this.topics.forEach((topic, topicName) => {
         const callback = this.subscriptions.get(topicName);
