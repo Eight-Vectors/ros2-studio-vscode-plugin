@@ -98,6 +98,26 @@
         "command": "vscode-ros-extension.open-bag-recorder",
         "title": "Open ROS2 Bag Recorder",
         "icon": "$(record)"
+      },
+      {
+        "command": "vscode-ros-extension.open-message-inspector",
+        "title": "Open Message/Service Inspector",
+        "icon": "$(symbol-interface)"
+      },
+      {
+        "command": "vscode-ros-extension.inspect-topic-message",
+        "title": "Inspect Message Type",
+        "icon": "$(info)"
+      },
+      {
+        "command": "vscode-ros-extension.inspect-service-type",
+        "title": "Inspect Service Type",
+        "icon": "$(info)"
+      },
+      {
+        "command": "vscode-ros-extension.inspect-action-type",
+        "title": "Inspect Action Type",
+        "icon": "$(info)"
       }
     ],
     "configuration": {
@@ -157,6 +177,11 @@
           "command": "vscode-ros-extension.open-bag-recorder",
           "when": "view == extNodesView && vscode-ros-extension.isConnected",
           "group": "navigation@3"
+        },
+        {
+          "command": "vscode-ros-extension.open-message-inspector",
+          "when": "view == extNodesView && vscode-ros-extension.isConnected",
+          "group": "navigation@4"
         }
       ],
       "view/item/context": [
@@ -175,6 +200,21 @@
         {
           "command": "vscode-ros-extension.add-to-bag-recorder",
           "when": "view == extNodesView && (viewItem == publisher || viewItem == subscribers)"
+        },
+        {
+          "command": "vscode-ros-extension.inspect-topic-message",
+          "when": "view == extNodesView && (viewItem == publisher || viewItem == subscribers)",
+          "group": "inline"
+        },
+        {
+          "command": "vscode-ros-extension.inspect-service-type",
+          "when": "view == extNodesView && viewItem == service",
+          "group": "inline"
+        },
+        {
+          "command": "vscode-ros-extension.inspect-action-type",
+          "when": "view == extNodesView && viewItem == actionClient",
+          "group": "inline"
         }
       ]
     }

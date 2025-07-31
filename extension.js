@@ -6,6 +6,7 @@ let RosbridgeClient,
   ConnectionDashboard,
   ParametersPanel,
   BagRecorderPanel,
+  MessageInspectorPanel,
   extensionHandle;
 
 try {
@@ -15,8 +16,10 @@ try {
   ConnectionDashboard = require("./ui/connectionDashboard");
   ParametersPanel = require("./ui/parametersPanel");
   BagRecorderPanel = require("./ui/bagRecorderPanel");
+  MessageInspectorPanel = require("./ui/messageInspectorPanel");
   ({ extensionHandle } = require("./utils/helpers"));
 } catch (error) {
+  console.error("Module load error:", error);
   vscode.window.showErrorMessage(`Module load error: ${error.message}`);
 }
 
@@ -525,11 +528,99 @@ function activate(context) {
         () => {
           BagRecorderPanel.createOrShow(context.extensionUri);
         }
+      ),
+      vscode.commands.registerCommand(
+        `${extensionHandle}.open-message-inspector`,
+        () => {
+          if (!MessageInspectorPanel) {
+            vscode.window.showErrorMessage("MessageInspectorPanel not loaded");
+            return;
+          }
+          MessageInspectorPanel.createOrShow(context.extensionUri, ws);
+        }
+      ),
+      vscode.commands.registerCommand(
+        `${extensionHandle}.inspect-topic-message`,
+        async (treeItem) => {
+          if (!treeItem) {
+            vscode.window.showErrorMessage("No topic selected");
+            return;
+          }
+
+          const topicName = treeItem.label || treeItem.id;
+          
+          if (!ws || !ws.isConnected()) {
+            vscode.window.showErrorMessage("Not connected to ROS bridge");
+            return;
+          }
+          
+          MessageInspectorPanel.createOrShow(context.extensionUri, ws);
+          setTimeout(() => {
+            if (MessageInspectorPanel.currentPanel) {
+              if (treeItem.messageType) {
+                MessageInspectorPanel.currentPanel._inspectMessageType(treeItem.messageType);
+              } else {
+                MessageInspectorPanel.currentPanel.inspectTopicMessageType(topicName);
+              }
+            } else {
+              vscode.window.showErrorMessage("Failed to open message inspector");
+            }
+          }, 500);
+        }
+      ),
+      vscode.commands.registerCommand(
+        `${extensionHandle}.inspect-service-type`,
+        async (treeItem) => {
+          if (!treeItem) {
+            vscode.window.showErrorMessage("No service selected");
+            return;
+          }
+
+          const serviceName = treeItem.label || treeItem.id;
+          
+          if (!ws || !ws.isConnected()) {
+            vscode.window.showErrorMessage("Not connected to ROS bridge");
+            return;
+          }
+          
+          MessageInspectorPanel.createOrShow(context.extensionUri, ws);
+          setTimeout(() => {
+            if (MessageInspectorPanel.currentPanel) {
+              ws.getServiceDetails(serviceName, (serviceType, error) => {
+                if (error) {
+                  vscode.window.showErrorMessage(`Failed to get service type: ${error}`);
+                  return;
+                }
+                MessageInspectorPanel.currentPanel._inspectServiceType(serviceType);
+              });
+            }
+          }, 500);
+        }
+      ),
+      vscode.commands.registerCommand(
+        `${extensionHandle}.inspect-action-type`,
+        async (treeItem) => {
+          if (!treeItem) {
+            vscode.window.showErrorMessage("No action selected");
+            return;
+          }
+
+          const actionName = treeItem.label || treeItem.id;
+          
+          MessageInspectorPanel.createOrShow(context.extensionUri, ws);
+          setTimeout(() => {
+            if (MessageInspectorPanel.currentPanel) {
+              MessageInspectorPanel.currentPanel._inspectActionType(actionName);
+            }
+          }, 500);
+        }
       )
     );
 
+
     channels["main"].show();
   } catch (error) {
+    console.error("Activation error:", error);
     vscode.window.showErrorMessage(
       `Failed to activate ROS Bridge Extension: ${error.message}`
     );

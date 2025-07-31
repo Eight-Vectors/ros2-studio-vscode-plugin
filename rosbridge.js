@@ -26,11 +26,10 @@ class RosbridgeClient {
         url: this.url,
       });
 
-      // Attempting to connect
       this.ros.on("connection", () => {
         vscode.window.showInformationMessage("Connected to ROS bridge");
-        this.reconnectAttempts = 0; // Reset on successful connection
-        this.reconnectDelay = 1000; // Reset delay
+        this.reconnectAttempts = 0;
+        this.reconnectDelay = 1000;
         this.isReconnecting = false;
         resolve();
       });
@@ -67,7 +66,7 @@ class RosbridgeClient {
     }
 
     this.reconnectAttempts++;
-    const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 30000); // Max 30 seconds
+    const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 30000);
 
     this.pChannel.appendLine(
       `Reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay / 1000} seconds...`
@@ -89,12 +88,11 @@ class RosbridgeClient {
   }
 
   resubscribeTopics() {
-    // Resubscribe to all previously subscribed topics
     this.subscriptions.forEach((callback, topicName) => {
       const topic = this.topics.get(topicName);
       if (topic) {
         this.pChannel.appendLine(`Resubscribing to topic: ${topicName}`);
-        topic.ros = this.ros; // Update ROS connection
+        topic.ros = this.ros;
         topic.subscribe(callback);
       }
     });
@@ -170,7 +168,6 @@ class RosbridgeClient {
     this.ros.getNodeDetails(
       nodeName,
       (subscriptions, publications, services) => {
-        // Convert to object format for backward compatibility
         const details = {
           subscribing: subscriptions || [],
           publishing: publications || [],
@@ -282,7 +279,6 @@ class RosbridgeClient {
     return this.connectionPromise;
   }
 
-  // Get all parameters for a ROS2 node
   async getParameters(nodeName, callback) {
     if (!this.ros || !this.ros.isConnected) {
       this.pChannel.appendLine("No rosbridge connection available");
@@ -290,7 +286,6 @@ class RosbridgeClient {
       return;
     }
 
-    // Use ROS2 list_parameters service
     const listParamsService = new ROSLIB.Service({
       ros: this.ros,
       name: `${nodeName}/list_parameters`,
@@ -302,7 +297,6 @@ class RosbridgeClient {
     listParamsService.callService(
       request,
       (result) => {
-        // The list of parameter names is in result.result.names
         const paramNames = result.result.names || [];
 
         if (paramNames.length === 0) {
@@ -310,7 +304,6 @@ class RosbridgeClient {
           return;
         }
 
-        // Now get the values using get_parameters service
         const getParamsService = new ROSLIB.Service({
           ros: this.ros,
           name: `${nodeName}/get_parameters`,
@@ -324,7 +317,6 @@ class RosbridgeClient {
         getParamsService.callService(
           getRequest,
           (getResult) => {
-            // Process the parameter values
             const parameters = paramNames.map((name, index) => {
               const value = this._extractROS2ParamValue(
                 getResult.values[index]
@@ -353,25 +345,12 @@ class RosbridgeClient {
         this.pChannel.appendLine(
           `Error listing parameters for ${nodeName}: ${error}`
         );
-        // If ROS2 services fail, return manual mode
         callback([], "manual_mode");
       }
     );
   }
 
-  // Extract value from ROS2 parameter based on type
   _extractROS2ParamValue(paramValue) {
-    // ROS2 parameter type constants:
-    // 0: PARAMETER_NOT_SET
-    // 1: PARAMETER_BOOL
-    // 2: PARAMETER_INTEGER
-    // 3: PARAMETER_DOUBLE
-    // 4: PARAMETER_STRING
-    // 5: PARAMETER_BYTE_ARRAY
-    // 6: PARAMETER_BOOL_ARRAY
-    // 7: PARAMETER_INTEGER_ARRAY
-    // 8: PARAMETER_DOUBLE_ARRAY
-    // 9: PARAMETER_STRING_ARRAY
 
     const type = paramValue.type;
 
@@ -395,7 +374,6 @@ class RosbridgeClient {
       case 9:
         return paramValue.string_array_value;
       default:
-        // If no type field, fall back to checking which value is defined
         if (paramValue.bool_value !== undefined) return paramValue.bool_value;
         if (paramValue.integer_value !== undefined)
           return paramValue.integer_value;
@@ -407,7 +385,6 @@ class RosbridgeClient {
     }
   }
 
-  // Get multiple parameter values given an array of parameter names
   getParameterValues(paramNames, callback) {
     if (!this.ros || !this.ros.isConnected) {
       callback([], "No connection");
@@ -487,14 +464,12 @@ class RosbridgeClient {
     );
   }
 
-  // Set a parameter for a specific ROS2 node
   async setNodeParameter(nodeName, paramName, value, callback) {
     if (!this.ros || !this.ros.isConnected) {
       callback(false, "No connection");
       return;
     }
 
-    // Get original parameter type to preserve it
     const getParamsService = new ROSLIB.Service({
       ros: this.ros,
       name: `${nodeName}/get_parameters`,
@@ -513,14 +488,12 @@ class RosbridgeClient {
           originalType = getResult.values[0].type;
         }
 
-        // For ROS2, use the node's set_parameters service
         const setParamsService = new ROSLIB.Service({
           ros: this.ros,
           name: `${nodeName}/set_parameters`,
           serviceType: "rcl_interfaces/srv/SetParameters",
         });
 
-        // Create the parameter value in ROS2 format with the original type
         const paramValue = this._createROS2ParamValue(value, originalType);
 
         const request = new ROSLIB.ServiceRequest({
@@ -535,7 +508,6 @@ class RosbridgeClient {
         setParamsService.callService(
           request,
           (result) => {
-            // Check if the parameter was set successfully
             if (
               result.results &&
               result.results[0] &&
@@ -557,14 +529,12 @@ class RosbridgeClient {
             this.pChannel.appendLine(
               `Error calling set_parameters service: ${error}`
             );
-            // Fallback to ROS1 approach
             this.setParameter(paramName, value, callback);
           }
         );
       },
       (error) => {
         this.pChannel.appendLine(`Error getting parameter type: ${error}`);
-        // Try without type info
         this._setNodeParameterWithoutType(nodeName, paramName, value, callback);
       }
     );
@@ -617,10 +587,9 @@ class RosbridgeClient {
     );
   }
 
-  // Create ROS2 parameter value structure with correct type
   _createROS2ParamValue(value, originalType = null) {
     const paramValue = {
-      type: 0, // PARAMETER_NOT_SET
+      type: 0,
       bool_value: false,
       integer_value: 0,
       double_value: 0.0,
@@ -632,46 +601,38 @@ class RosbridgeClient {
       string_array_value: [],
     };
 
-    // If we have the original type, use it to determine how to handle numbers
     if (originalType !== null && typeof value === "number") {
       if (originalType === 2) {
-        // PARAMETER_INTEGER
         paramValue.type = 2;
         paramValue.integer_value = Math.round(value);
       } else if (originalType === 3) {
-        // PARAMETER_DOUBLE
         paramValue.type = 3;
         paramValue.double_value = value;
       }
     } else if (typeof value === "boolean") {
-      paramValue.type = 1; // PARAMETER_BOOL
+      paramValue.type = 1;
       paramValue.bool_value = value;
     } else if (typeof value === "number") {
-      // Without original type info, always treat numbers as doubles to be safe
-      paramValue.type = 3; // PARAMETER_DOUBLE
+      paramValue.type = 3;
       paramValue.double_value = value;
     } else if (typeof value === "string") {
-      paramValue.type = 4; // PARAMETER_STRING
+      paramValue.type = 4;
       paramValue.string_value = value;
     } else if (Array.isArray(value)) {
-      // Handle arrays based on the type of the first element
       if (value.length > 0) {
         if (typeof value[0] === "boolean") {
-          paramValue.type = 6; // PARAMETER_BOOL_ARRAY
+          paramValue.type = 6;
           paramValue.bool_array_value = value;
         } else if (typeof value[0] === "number") {
-          // For array of numbers, check original type
           if (originalType === 7) {
-            // PARAMETER_INTEGER_ARRAY
             paramValue.type = 7;
             paramValue.integer_array_value = value.map((v) => Math.round(v));
           } else {
-            // Default to double array
-            paramValue.type = 8; // PARAMETER_DOUBLE_ARRAY
+            paramValue.type = 8;
             paramValue.double_array_value = value;
           }
         } else if (typeof value[0] === "string") {
-          paramValue.type = 9; // PARAMETER_STRING_ARRAY
+          paramValue.type = 9;
           paramValue.string_array_value = value;
         }
       }
@@ -680,8 +641,180 @@ class RosbridgeClient {
     return paramValue;
   }
 
+  getMessageDetails(messageType, callback) {
+    if (!this.ros || !this.ros.isConnected) {
+      callback(null, "No connection");
+      return;
+    }
+
+    const service = new ROSLIB.Service({
+      ros: this.ros,
+      name: "/rosapi/message_details",
+      serviceType: "rosapi/MessageDetails",
+    });
+
+    const request = new ROSLIB.ServiceRequest({
+      type: messageType,
+    });
+
+    service.callService(
+      request,
+      (result) => {
+        const details = this._parseMessageDefinition(result.typedefs || []);
+        callback(details, null);
+      },
+      (error) => {
+        callback(null, error);
+      }
+    );
+  }
+
+  getServiceDetails(serviceType, callback) {
+    if (!this.ros || !this.ros.isConnected) {
+      callback(null, "No connection");
+      return;
+    }
+
+    const service = new ROSLIB.Service({
+      ros: this.ros,
+      name: "/rosapi/service_type",
+      serviceType: "rosapi/ServiceType",
+    });
+
+    const request = new ROSLIB.ServiceRequest({
+      service: serviceType,
+    });
+
+    service.callService(
+      request,
+      (result) => {
+        callback(result.type, null);
+      },
+      (error) => {
+        callback(null, error);
+      }
+    );
+  }
+
+  getServiceRequestDetails(serviceType, callback) {
+    if (!this.ros || !this.ros.isConnected) {
+      callback(null, "No connection");
+      return;
+    }
+
+    const requestService = new ROSLIB.Service({
+      ros: this.ros,
+      name: "/rosapi/service_request_details",
+      serviceType: "rosapi/ServiceRequestDetails",
+    });
+
+    const request = new ROSLIB.ServiceRequest({
+      type: serviceType,
+    });
+
+    requestService.callService(
+      request,
+      (result) => {
+        const details = this._parseMessageDefinition(result.typedefs || []);
+        callback(details, null);
+      },
+      (error) => {
+        callback(null, error);
+      }
+    );
+  }
+
+  getServiceResponseDetails(serviceType, callback) {
+    if (!this.ros || !this.ros.isConnected) {
+      callback(null, "No connection");
+      return;
+    }
+
+    const responseService = new ROSLIB.Service({
+      ros: this.ros,
+      name: "/rosapi/service_response_details",
+      serviceType: "rosapi/ServiceResponseDetails",
+    });
+
+    const request = new ROSLIB.ServiceRequest({
+      type: serviceType,
+    });
+
+    responseService.callService(
+      request,
+      (result) => {
+        const details = this._parseMessageDefinition(result.typedefs || []);
+        callback(details, null);
+      },
+      (error) => {
+        callback(null, error);
+      }
+    );
+  }
+
+  _parseMessageDefinition(typedefs) {
+    const parsed = {};
+    
+    typedefs.forEach((typedef) => {
+      const type = typedef.type;
+      const fieldList = typedef.fieldnames || [];
+      const fieldTypes = typedef.fieldtypes || [];
+      const examples = typedef.examples || [];
+      const constnames = typedef.constnames || [];
+      const constvalues = typedef.constvalues || [];
+      
+      
+      const fieldarraylen = typedef.fieldarraylen || [];
+      
+      const fields = [];
+      for (let i = 0; i < fieldList.length; i++) {
+        if (fieldList[i] === 'SLOT_TYPES' || fieldList[i] === '_slot_types' || fieldList[i].startsWith('_')) {
+          continue;
+        }
+        
+        let fieldType = fieldTypes[i];
+        const arrayLen = fieldarraylen[i];
+        
+        if (arrayLen === 0) {
+          fieldType = fieldType + '[]';
+        } else if (arrayLen > 0) {
+          fieldType = fieldType + `[${arrayLen}]`;
+        }
+        
+        fields.push({
+          name: fieldList[i],
+          type: fieldType,
+          example: examples[i] || null,
+        });
+      }
+      
+      const constants = [];
+      for (let i = 0; i < constnames.length; i++) {
+        if (constnames[i] === 'SLOT_TYPES' || constnames[i].startsWith('_')) {
+          continue;
+        }
+        
+        if (fieldList.includes(constnames[i])) {
+          continue;
+        }
+        
+        constants.push({
+          name: constnames[i],
+          value: constvalues[i],
+        });
+      }
+      
+      parsed[type] = {
+        fields: fields,
+        constants: constants,
+      };
+    });
+    
+    return parsed;
+  }
+
   disconnect() {
-    this.shouldReconnect = false; // Prevent reconnection attempts
+    this.shouldReconnect = false;
     
     if (this.ros) {
       this.topics.forEach((topic, topicName) => {
