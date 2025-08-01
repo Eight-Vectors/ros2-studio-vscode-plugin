@@ -32,6 +32,7 @@ Connect to ROS systems via rosbridge WebSocket protocol directly from VS Code. V
 - **Configurable Connection** - Custom WebSocket URL configuration
 - **Node Parameter Configuration** - View and modify ROS2 node parameters in real-time
 - **Bag Recorder Panel** - Select topics and generate ROS2 bag record commands
+- **Message/Service/Action Inspector** - Generate JSON templates for ROS message, service, and action types
 
 ## 📋 Requirements
 
@@ -68,6 +69,7 @@ Connect to ROS systems via rosbridge WebSocket protocol directly from VS Code. V
 | `Get Parameters`      | View/edit node parameters   | Context Menu on Nodes       |
 | `Add to Bag Recorder` | Add topic to bag recorder   | Context Menu on Topics      |
 | `Open Bag Recorder`   | Open bag recorder panel     | Command Palette             |
+| `Inspect Type`        | Generate JSON template      | Info icon on hover (Publishers/Subscribers/Services) |
 
 ## 📖 Usage
 
@@ -155,6 +157,29 @@ The Bag Recorder panel helps you create ROS2 bag recording commands:
 4. **Access Panel** - Use Command Palette: "Open Bag Recorder" or right-click topics
 
 ![Bag Recorder Panel](media/gifs/bag-recorder.gif)
+
+### ROS Message/Service/Action Type Inspector
+
+The Message/Service/Action Type Inspector helps developers quickly generate JSON templates for ROS types:
+
+1. **Access Inspector** - Hover over any publisher, subscriber, or service in the tree view and click the info (ⓘ) icon
+2. **Features**:
+   - Automatically fetches type definition from ROS
+   - Generates a complete JSON template with all fields
+   - Supports nested message types
+   - Handles arrays with example elements
+   - Provides type information in comments
+   - Includes default values for primitive types
+3. **Supported Types**:
+   - **Messages** - Generate templates for any ROS message type (from publishers/subscribers)
+   - **Services** - Separate templates for request and response
+   - **Actions** - Templates for goal, result, and feedback (when available)
+4. **Usage**:
+   - Copy the generated template to use in service calls or message publishing
+   - Modify the values as needed for your use case
+   - The template includes all fields with appropriate default values
+
+![Message/Service Inspector](media/gifs/message-service-inspector.gif)
 
 ## 📄 License
 

@@ -69,30 +69,15 @@ class Subscriber extends vscode.TreeItem {
     label,
     nodeLabel,
     address,
-    isChecked,
     collapsibleState,
-    command,
     messageType = null
   ) {
     super(label, collapsibleState);
     this.nodeLabel = nodeLabel;
     this.address = address;
-    this.isChecked = isChecked;
-    this.command = command;
     this.messageType = messageType;
     this.contextValue = "subscribers";
-    this.updateIcon();
-  }
-
-  updateIcon() {
-    this.iconPath = new vscode.ThemeIcon(
-      this.isChecked ? "check" : "circle-outline"
-    );
-  }
-
-  toggleChecked() {
-    this.isChecked = !this.isChecked;
-    this.updateIcon();
+    this.iconPath = new vscode.ThemeIcon("eye");
   }
 }
 
@@ -313,13 +298,7 @@ class PublishersProvider {
                 topicName,
                 nodeName,
                 topic.node.address,
-                false,
                 vscode.TreeItemCollapsibleState.None,
-                {
-                  command: `${extensionHandle}.toggle-subscription`,
-                  title: "Toggle Subscriber",
-                  arguments: [`${nodeName}${topicName}`, topicType],
-                },
                 topicType
               );
               return sub;
