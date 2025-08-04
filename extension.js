@@ -311,7 +311,6 @@ function activate(context) {
             topicName = "/" + parts.slice(2).join("/");
           } else if (treeItem && typeof treeItem === "object") {
             const nodeName = treeItem.nodeLabel;
-            // Ensure topic starts with / and avoid double slashes
             const topicLabel = treeItem.label.startsWith("/")
               ? treeItem.label
               : "/" + treeItem.label;
@@ -423,7 +422,6 @@ function activate(context) {
             }
           }
 
-          // Only show channel if we're subscribing (state is true)
           if (state && channels[channelName]) {
             channels[channelName].show();
           }

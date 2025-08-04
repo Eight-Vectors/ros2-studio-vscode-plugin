@@ -59,16 +59,16 @@ Connect to ROS systems via rosbridge WebSocket protocol directly from VS Code. V
 
 ### Available Commands
 
-| Command               | Description                 | Access                      |
-| --------------------- | --------------------------- | --------------------------- |
-| `Connect to Remote`   | Connect to rosbridge server | Command Palette / Tree View |
-| `Disconnect`          | Disconnect from rosbridge   | Context Menu                |
-| `Refresh connection`  | Refresh ROS entities        | Tree View Button            |
-| `Subscribe`           | Subscribe to topic          | Context Menu on Publishers  |
-| `Call Service`        | Call a ROS service          | Context Menu on Services    |
-| `Get Parameters`      | View/edit node parameters   | Context Menu on Nodes       |
-| `Add to Bag Recorder` | Add topic to bag recorder   | Context Menu on Topics      |
-| `Open Bag Recorder`   | Open bag recorder panel     | Command Palette             |
+| Command               | Description                 | Access                                               |
+| --------------------- | --------------------------- | ---------------------------------------------------- |
+| `Connect to Remote`   | Connect to rosbridge server | Command Palette / Tree View                          |
+| `Disconnect`          | Disconnect from rosbridge   | Context Menu                                         |
+| `Refresh connection`  | Refresh ROS entities        | Tree View Button                                     |
+| `Subscribe`           | Subscribe to topic          | Context Menu on Publishers                           |
+| `Call Service`        | Call a ROS service          | Context Menu on Services                             |
+| `Get Parameters`      | View/edit node parameters   | Context Menu on Nodes                                |
+| `Add to Bag Recorder` | Add topic to bag recorder   | Context Menu on Topics                               |
+| `Open Bag Recorder`   | Open bag recorder panel     | Command Palette                                      |
 | `Inspect Type`        | Generate JSON template      | Info icon on hover (Publishers/Subscribers/Services) |
 
 ## 📖 Usage
@@ -187,7 +187,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🏢 About
 
-This extension is developed and maintained by EightVectors. For commercial support and custom development, please contact us at [email@company.com].
+This extension is developed and maintained by EightVectors. For commercial support and custom development, please contact us at support@eightvectors.com.
 
 ## 🐛 Known Issues
 
