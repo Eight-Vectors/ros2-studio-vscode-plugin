@@ -1,6 +1,6 @@
 # ROS Bridge Extension for Visual Studio Code
 
-[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/YOUR-PUBLISHER-ID.vscode-ros-extension)](https://marketplace.visualstudio.com/items?itemName=YOUR-PUBLISHER-ID.vscode-ros-extension)
+[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/eightvectors.vscode-ros-extension)](https://marketplace.visualstudio.com/items?itemName=eightvectors.vscode-ros-extension)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Connect to ROS systems via rosbridge WebSocket protocol directly from VS Code. Visualize topics, call services, and interact with ROS nodes without leaving your development environment.
@@ -192,10 +192,6 @@ This extension is developed and maintained by EightVectors. For commercial suppo
 ## 🐛 Known Issues
 
 - Large message rates may impact performance
-
-<!-- ## 🔄 Updates and Releases
-
-For information about how updates are published and distributed, see our [Update Process Documentation](docs/UPDATE_PROCESS_SUMMARY.md). -->
 
 ## 📮 Support
 

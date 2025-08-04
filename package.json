@@ -3,7 +3,7 @@
   "displayName": "ROS Bridge Extension",
   "description": "Connect to ROS systems via rosbridge, visualize topics, call services, and interact with ROS nodes directly from VS Code",
   "version": "0.3.0",
-  "publisher": "YOUR-PUBLISHER-ID",
+  "publisher": "eightvectors",
   "icon": "media/industrial-robot.png",
   "galleryBanner": {
     "color": "#1e2327",
