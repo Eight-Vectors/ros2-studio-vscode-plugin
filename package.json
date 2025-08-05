@@ -1,6 +1,6 @@
 {
   "name": "vscode-ros-extension",
-  "displayName": "ROS Bridge Extension",
+  "displayName": "ROS Plugin",
   "description": "Connect to ROS systems via rosbridge, visualize topics, call services, and interact with ROS nodes directly from VS Code",
   "version": "0.3.1",
   "publisher": "eightvectors",
@@ -160,6 +160,39 @@
           "minimum": 10,
           "maximum": 1000,
           "description": "Maximum number of messages to keep in buffer per topic"
+        },
+        "vscode-ros-extension.maxMessageDisplayLength": {
+          "type": "number",
+          "default": 2000,
+          "minimum": 500,
+          "maximum": 10000,
+          "description": "Maximum characters to display for unknown message types"
+        },
+        "vscode-ros-extension.showFullDataForKnownTypes": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show full data arrays for known types like LaserScan ranges (may impact performance)"
+        },
+        "vscode-ros-extension.maxOutputLines": {
+          "type": "number",
+          "default": 500,
+          "minimum": 100,
+          "maximum": 2000,
+          "description": "Maximum lines to keep in output channel before clearing (prevents memory issues)"
+        },
+        "vscode-ros-extension.maxMessagesToRetain": {
+          "type": "number",
+          "default": 10,
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Maximum number of messages to retain per topic (prevents memory issues for infrequent topics)"
+        },
+        "vscode-ros-extension.maxMemoryMB": {
+          "type": "number",
+          "default": 1,
+          "minimum": 0.1,
+          "maximum": 10,
+          "description": "Maximum memory (in MB) allowed for message buffer per topic before trimming old messages"
         }
       }
     },
@@ -168,13 +201,17 @@
       {
         "view": "extNodesView",
         "contents": "[Connect](command:vscode-ros-extension.connect-bridge)"
+      },
+      {
+        "view": "extNodeListView",
+        "contents": "[Connect](command:vscode-ros-extension.connect-bridge)"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
           "id": "extContainerView",
-          "title": "ROS Nodes",
+          "title": "ROS Plugin",
           "icon": "media/industrial-robot.svg"
         }
       ]
@@ -184,6 +221,11 @@
         {
           "id": "extNodesView",
           "name": "ROS Topics",
+          "icon": "media/industrial-robot.svg"
+        },
+        {
+          "id": "extNodeListView",
+          "name": "ROS Nodes",
           "icon": "media/industrial-robot.svg"
         }
       ]
@@ -252,6 +294,30 @@
         {
           "command": "vscode-ros-extension.inspect-action-type",
           "when": "view == extNodesView && viewItem == actionClient",
+          "group": "inline"
+        },
+        {
+          "command": "vscode-ros-extension.get-parameters",
+          "when": "view == extNodeListView && viewItem == node"
+        },
+        {
+          "command": "vscode-ros-extension.inspect-topic-message",
+          "when": "view == extNodeListView && viewItem == publisher",
+          "group": "inline"
+        },
+        {
+          "command": "vscode-ros-extension.inspect-topic-message",
+          "when": "view == extNodeListView && viewItem == subscribers",
+          "group": "inline"
+        },
+        {
+          "command": "vscode-ros-extension.inspect-service-type",
+          "when": "view == extNodeListView && viewItem == service",
+          "group": "inline"
+        },
+        {
+          "command": "vscode-ros-extension.inspect-action-type",
+          "when": "view == extNodeListView && viewItem == actionClient",
           "group": "inline"
         }
       ]

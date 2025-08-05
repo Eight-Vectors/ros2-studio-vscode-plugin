@@ -31,16 +31,14 @@ class Topic extends Item {
     this.address = address;
     this.contextValue = isSubscribed ? "topicSubscribed" : "topic";
     this.tooltip = `${label} (${type})`;
-    this.description = ""; // Remove type from display to save space
+    this.description = "";
     this.messageType = type;
     this.rosbridgeClient = rosbridgeClient;
     this.isSubscribed = isSubscribed;
-    // Remove icon - we'll use text-based Subscribe/Unsubscribe buttons
   }
   
   setSubscribed(state) {
     this.isSubscribed = state;
-    // Update contextValue to trigger button visibility
     this.contextValue = state ? "topicSubscribed" : "topic";
   }
 }
@@ -66,7 +64,6 @@ class Publisher extends vscode.TreeItem {
   }
 
   updateIcon() {
-    // Remove icon for publishers
     this.iconPath = undefined;
   }
 
@@ -89,7 +86,6 @@ class Subscriber extends vscode.TreeItem {
     this.address = address;
     this.messageType = messageType;
     this.contextValue = "subscribers";
-    // Remove icon for subscribers
     this.iconPath = undefined;
   }
 }
@@ -123,8 +119,8 @@ class PublishersProvider {
 
     this.pubs = {};
     this.subs = {};
-    this.topics = {}; // Track topic items
-    this.subscribedTopics = new Set(); // Track which topics are subscribed
+    this.topics = {};
+    this.subscribedTopics = new Set();
 
     this.channel = channel;
 
@@ -135,7 +131,6 @@ class PublishersProvider {
 
   setRosbridgeClient(client) {
     this.rosbridgeClient = client;
-    // Rosbridge client set
   }
 
   refresh() {
@@ -151,8 +146,6 @@ class PublishersProvider {
       return this.getTrees();
     } else if (element instanceof Tree) {
       return this.getTopicsList(element);
-    } else if (element instanceof Topic) {
-      return this.getTopicDetails(element);
     } else {
       return Promise.resolve([]);
     }
@@ -164,12 +157,10 @@ class PublishersProvider {
       pub.toggleChecked();
       this._onDidChangeTreeData.fire(pub);
       
-      // Update topic subscription state
       const topicName = pub.label;
       if (pub.isChecked) {
         this.subscribedTopics.add(topicName);
       } else {
-        // Check if any other publishers for this topic are still subscribed
         let anySubscribed = false;
         for (const key in this.pubs) {
           if (this.pubs[key].label === topicName && this.pubs[key].isChecked && key !== lbl) {
@@ -182,7 +173,6 @@ class PublishersProvider {
         }
       }
       
-      // Update topic icon
       if (this.topics[topicName]) {
         this.topics[topicName].setSubscribed(this.subscribedTopics.has(topicName));
         this._onDidChangeTreeData.fire(this.topics[topicName]);
@@ -202,7 +192,6 @@ class PublishersProvider {
       }
     }
     
-    // Reset all topic subscription states
     this.subscribedTopics.clear();
     for (const topicName in this.topics) {
       this.topics[topicName].setSubscribed(false);
@@ -211,7 +200,6 @@ class PublishersProvider {
     this._onDidChangeTreeData.fire();
   }
   
-  // Update subscription state for a specific topic without full refresh
   setTopicSubscriptionState(topicName, isSubscribed) {
     if (isSubscribed) {
       this.subscribedTopics.add(topicName);
@@ -219,16 +207,13 @@ class PublishersProvider {
       this.subscribedTopics.delete(topicName);
     }
     
-    // Update the topic item if it exists
     const topicItem = this.topics[topicName];
     if (topicItem) {
       topicItem.setSubscribed(isSubscribed);
-      // Fire change event only for this specific topic
       this._onDidChangeTreeData.fire(topicItem);
     }
   }
   
-  // Get topic item by name
   getTopicItem(topicName) {
     return this.topics[topicName];
   }
@@ -238,8 +223,6 @@ class PublishersProvider {
       (address) => new Tree(address, vscode.TreeItemCollapsibleState.Expanded)
     );
   }
-
-  // Removed getNodes method - no longer needed for topic-centric view
 
   async getTopicsList(tree) {
     if (this.rosbridgeClient && this.rosbridgeClient.isConnected()) {
@@ -253,7 +236,7 @@ class PublishersProvider {
                   topic.name,
                   topic.type,
                   tree.address,
-                  vscode.TreeItemCollapsibleState.Collapsed,
+                  vscode.TreeItemCollapsibleState.None,
                   this.rosbridgeClient,
                   isSubscribed
                 );
@@ -273,7 +256,6 @@ class PublishersProvider {
   async getTopicDetails(topic) {
     if (this.rosbridgeClient && this.rosbridgeClient.isConnected()) {
       return new Promise((resolve) => {
-        // Get all nodes to find publishers and subscribers
         this.rosbridgeClient.getNodes((nodes) => {
           const details = [];
           let processedNodes = 0;
@@ -283,10 +265,8 @@ class PublishersProvider {
             return;
           }
           
-          // Check each node for publishers/subscribers of this topic
           nodes.forEach((nodeName) => {
             this.rosbridgeClient.getNodeDetails(nodeName, (nodeDetails) => {
-              // Check if node publishes to this topic
               if (nodeDetails.publishing && nodeDetails.publishing.includes(topic.label)) {
                 const pubKey = `${nodeName}${topic.label}`;
                 const existingPub = this.pubs[pubKey];
@@ -298,14 +278,13 @@ class PublishersProvider {
                   topic.address,
                   isChecked,
                   vscode.TreeItemCollapsibleState.None,
-                  undefined, // Remove command from publisher nodes
+                  undefined,
                   topic.type
                 );
                 this.pubs[pubKey] = pub;
                 details.push(pub);
               }
               
-              // Check if node subscribes to this topic
               if (nodeDetails.subscribing && nodeDetails.subscribing.includes(topic.label)) {
                 const sub = new Subscriber(
                   `${nodeName} (subscriber)`,
@@ -331,24 +310,17 @@ class PublishersProvider {
   }
 
   async getClients() {
-    // Not used with rosbridge
     return [];
   }
-
-  // Removed getPublishers method - functionality moved to getTopicDetails
-
-  // Removed getSubscribers method - functionality moved to getTopicDetails
 
   async getServiceClients(topic) {
     if (this.rosbridgeClient && this.rosbridgeClient.isConnected()) {
       return new Promise((resolve) => {
         const nodeName = topic.node.label;
         
-        // Get node-specific details
         this.rosbridgeClient.getNodeDetails(nodeName, (details) => {
           const services = details.services || [];
           
-          // Create service clients for services this node provides
           const serviceClients = services.map((serviceName) => {
             return new Service(
               serviceName,
@@ -376,12 +348,9 @@ class PublishersProvider {
       return new Promise((resolve) => {
         const nodeName = topic.node.label;
         
-        // Get node-specific details
         this.rosbridgeClient.getNodeDetails(nodeName, (details) => {
-          // Check if action_clients is available in the details
           const actionClients = details.action_clients || [];
           
-          // Create action clients for this node
           const actionClientItems = actionClients.map((actionName) => {
             return new ActionClient(
               actionName,
