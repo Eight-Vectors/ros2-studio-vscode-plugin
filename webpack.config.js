@@ -1,4 +1,5 @@
 const path = require('path');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   target: 'node',
@@ -57,4 +58,11 @@ module.exports = {
   optimization: {
     minimize: false,
   },
+  plugins: [
+    new CopyWebpackPlugin({
+      patterns: [
+        { from: 'media', to: 'media' }
+      ]
+    })
+  ],
 };

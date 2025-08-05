@@ -133,6 +133,9 @@ function activate(context) {
       "ROS Bridge Extension"
     );
     outputChannels.set("main", channels["main"]);
+    
+    // Periodic cleanup interval
+    let cleanupInterval = null;
 
     // Create and register tree view provider
     let tree = new PublishersProvider(
@@ -199,6 +202,8 @@ function activate(context) {
                 );
                 tree.refresh();
                 ConnectionDashboard.createOrShow(context.extensionUri, ws);
+                
+                // No need for cleanup interval anymore since we don't store message buffers
               })
               .catch((error) => {
                 channels["main"].appendLine(`Failed to connect: ${error}`);
@@ -244,6 +249,13 @@ function activate(context) {
           }
 
           for (const [name, channel] of channelsToDispose) {
+            // Extract topic name from channel name if it's a topic channel
+            if (name.startsWith("ROS Topic: ")) {
+              const topicName = name.substring("ROS Topic: ".length);
+              // Update tree state to show topic as unsubscribed
+              tree.setTopicSubscriptionState(topicName, false);
+            }
+            
             channel.clear();
             channel.hide();
             // Actually dispose on disconnect
@@ -256,6 +268,12 @@ function activate(context) {
 
           ws.disconnect();
           ws = null;
+          
+          // Clear cleanup interval
+          if (cleanupInterval) {
+            clearInterval(cleanupInterval);
+            cleanupInterval = null;
+          }
 
           tree.setRosbridgeClient(null);
           tree.resetAllCheckboxes();
@@ -293,7 +311,7 @@ function activate(context) {
       ),
       vscode.commands.registerCommand(
         `${extensionHandle}.toggle-subscription`,
-        (treeItem, messageType) => {
+        async (treeItem, messageType) => {
           if (!ws || !(ws instanceof RosbridgeClient)) {
             vscode.window.showErrorMessage(
               "No connection to ROS bridge. Please connect first."
@@ -335,24 +353,60 @@ function activate(context) {
           if (state) {
             // Subscribe using rosbridge
             const topicMessageType = messageType || "std_msgs/String";
+            
+            // Get configuration values
+            const config = vscode.workspace.getConfiguration(extensionHandle);
+            const messageThrottle = config.get("messageThrottleRate", 100);
+            const maxBufferSize = config.get("maxMessageBufferSize", 100);
 
             let subscriptionData = {
               visualizationPanel: null,
               creatingPanel: false,
               topicName: topicName,
               messageType: topicMessageType,
+              messageBuffer: [],
+              maxBufferSize: maxBufferSize,
+              lastMessageTime: 0,
+              messageThrottle: messageThrottle,
             };
 
             const subscription = ws.subscribeTopic(
               topicName,
               topicMessageType,
               (msg) => {
+                const now = Date.now();
+                
+                // Throttle message processing
+                if (now - subscriptionData.lastMessageTime < subscriptionData.messageThrottle) {
+                  return;
+                }
+                subscriptionData.lastMessageTime = now;
+                
                 const timestamp = new Date().toISOString();
-                channels[channelName].appendLine(
-                  `[${timestamp}] Message received:`
-                );
-                channels[channelName].appendLine(JSON.stringify(msg, null, 2));
+                
+                // Limit output channel buffer
+                subscriptionData.messageBuffer.push({
+                  timestamp,
+                  message: msg
+                });
+                
+                // Remove old messages if buffer is full
+                if (subscriptionData.messageBuffer.length > subscriptionData.maxBufferSize) {
+                  subscriptionData.messageBuffer.shift();
+                }
+                
+                // Clear and rewrite channel with limited buffer
+                channels[channelName].clear();
+                channels[channelName].appendLine(`Topic: ${topicName} (Last ${subscriptionData.messageBuffer.length} messages)`);
                 channels[channelName].appendLine("");
+                
+                // Show only last 10 messages in output
+                const messagesToShow = subscriptionData.messageBuffer.slice(-10);
+                messagesToShow.forEach((entry) => {
+                  channels[channelName].appendLine(`[${entry.timestamp}] Message received:`);
+                  channels[channelName].appendLine(JSON.stringify(entry.message, null, 2));
+                  channels[channelName].appendLine("");
+                });
 
                 const detectedType = VisualizationPanel.detectMessageType(
                   topicMessageType,
@@ -412,6 +466,12 @@ function activate(context) {
 
             ws.unsubscribeTopic(topicName);
 
+            // Clean up subscription data
+            if (subscription && subscription.subscriptionData) {
+              subscription.subscriptionData.messageBuffer = [];
+              subscription.subscriptionData = null;
+            }
+
             // Clean up output channel for non-visualizable topics
             if (channels[channelName]) {
               channels[channelName].clear();
@@ -425,6 +485,9 @@ function activate(context) {
           if (state && channels[channelName]) {
             channels[channelName].show();
           }
+          
+          // Refresh tree to update button state
+          tree.refresh();
         }
       ),
       vscode.commands.registerCommand(
@@ -567,6 +630,282 @@ function activate(context) {
         }
       ),
       vscode.commands.registerCommand(
+        `${extensionHandle}.subscribe-to-topic`,
+        async (topic) => {
+          if (!topic || !topic.label) {
+            vscode.window.showErrorMessage("No topic selected");
+            return;
+          }
+
+          if (!ws || !ws.isConnected()) {
+            vscode.window.showErrorMessage("Not connected to ROS bridge");
+            return;
+          }
+
+          const topicName = topic.label;
+          const messageType = topic.type || topic.messageType || "std_msgs/String";
+          
+          // Update UI immediately
+          tree.setTopicSubscriptionState(topicName, true);
+          
+          // Create a simple channel name for the topic
+          const channelName = `ROS Topic: ${topicName}`;
+          
+          // Create output channel if it doesn't exist
+          if (!channels[channelName]) {
+            channels[channelName] = vscode.window.createOutputChannel(channelName);
+            outputChannels.set(channelName, channels[channelName]);
+          }
+          
+          // Show the channel immediately
+          channels[channelName].show();
+          
+          // Get configuration values
+          const config = vscode.workspace.getConfiguration(extensionHandle);
+          const messageThrottle = config.get("messageThrottleRate", 100);
+          const maxBufferSize = config.get("maxMessageBufferSize", 100);
+          
+          // Create subscription data
+          let subscriptionData = {
+            visualizationPanel: null,
+            creatingPanel: false,
+            topicName: topicName,
+            messageType: messageType,
+            messageCount: 0,
+            lastMessageTime: 0,
+            messageThrottle: messageThrottle,
+            channelName: channelName,
+            outputThrottle: 1000, // Only update output every 1 second
+            lastOutputTime: 0,
+            pendingMessage: null,
+            outputLineCount: 0,
+            maxOutputLines: 100 // Limit output to prevent memory growth
+          };
+          
+          // Subscribe to the topic
+          channels[channelName].appendLine(`Attempting to subscribe to ${topicName} with type ${messageType}...`);
+          
+          const subscription = ws.subscribeTopic(
+            topicName,
+            messageType,
+            (msg) => {
+              const now = Date.now();
+              
+              // Throttle message processing
+              if (subscriptionData.messageThrottle > 0 && now - subscriptionData.lastMessageTime < subscriptionData.messageThrottle) {
+                return;
+              }
+              subscriptionData.lastMessageTime = now;
+              subscriptionData.messageCount++;
+              if (!subscriptionData.firstMessageTime) {
+                subscriptionData.firstMessageTime = now;
+              }
+              
+              // Store only the latest message for output
+              subscriptionData.pendingMessage = msg;
+              
+              // Throttle output channel updates to reduce UI overhead
+              if (now - subscriptionData.lastOutputTime >= subscriptionData.outputThrottle) {
+                subscriptionData.lastOutputTime = now;
+                
+                // Don't clear the entire channel - just append new info
+                const timestamp = new Date().toISOString();
+                const channel = channels[channelName];
+                
+                // Only show a summary and the latest message
+                if (subscriptionData.messageCount === 1) {
+                  channel.appendLine(`Topic: ${topicName}`);
+                  channel.appendLine(`Message Type: ${messageType}`);
+                  channel.appendLine(`First message received at ${timestamp}`);
+                  channel.appendLine("");
+                }
+                
+                // Show message count and rate
+                const rate = subscriptionData.messageCount > 1 ? 
+                  `(~${Math.round(1000 / (now - subscriptionData.firstMessageTime) * subscriptionData.messageCount)} Hz)` : "";
+                channel.appendLine(`[${timestamp}] Message #${subscriptionData.messageCount} ${rate}`);
+                
+                // Only stringify small messages, show summary for large ones
+                try {
+                  const msgStr = JSON.stringify(subscriptionData.pendingMessage, null, 2);
+                  if (msgStr.length < 500) {
+                    channel.appendLine(msgStr);
+                  } else {
+                    // For large messages, show only key info
+                    channel.appendLine(`[Large message - ${msgStr.length} chars]`);
+                    if (subscriptionData.pendingMessage.header) {
+                      channel.appendLine(`Header: ${JSON.stringify(subscriptionData.pendingMessage.header)}`);
+                    }
+                  }
+                } catch (e) {
+                  channel.appendLine(`[Error stringifying message: ${e.message}]`);
+                }
+                channel.appendLine("");
+                
+                // Track output lines and clear if too many
+                subscriptionData.outputLineCount += 5; // Approximate lines added
+                if (subscriptionData.outputLineCount > subscriptionData.maxOutputLines) {
+                  channel.clear();
+                  channel.appendLine(`Topic: ${topicName} (Output cleared after ${subscriptionData.maxOutputLines} lines)`);
+                  channel.appendLine(`Total messages received: ${subscriptionData.messageCount}`);
+                  channel.appendLine("");
+                  subscriptionData.outputLineCount = 3;
+                }
+                
+                // Clear the pending message after displaying
+                subscriptionData.pendingMessage = null;
+              }
+              
+              // Handle visualization if applicable
+              const detectedType = VisualizationPanel.detectMessageType(
+                messageType,
+                msg
+              );
+              if (
+                detectedType === "OccupancyGrid" ||
+                detectedType === "LaserScan" ||
+                detectedType === "URDF"
+              ) {
+                if (
+                  !subscriptionData.visualizationPanel &&
+                  !subscriptionData.creatingPanel
+                ) {
+                  subscriptionData.creatingPanel = true;
+                  VisualizationPanel.createOrShow(
+                    context.extensionUri,
+                    topicName,
+                    messageType,
+                    msg
+                  )
+                    .then((panel) => {
+                      subscriptionData.creatingPanel = false;
+                      if (panel) {
+                        subscriptionData.visualizationPanel = panel;
+                        panel.updateData(msg);
+                      }
+                    })
+                    .catch(() => {
+                      subscriptionData.creatingPanel = false;
+                    });
+                } else if (subscriptionData.visualizationPanel) {
+                  subscriptionData.visualizationPanel.updateData(msg);
+                }
+              }
+            }
+          );
+          
+          if (subscription) {
+            subscription.subscriptionData = subscriptionData;
+            channels[channelName].appendLine(`Successfully subscribed to topic: ${topicName}`);
+            channels[channelName].appendLine(`Message Type: ${messageType}`);
+            channels[channelName].appendLine(`Waiting for messages...`);
+            channels[channelName].appendLine("");
+            
+            // Store the subscription data in channels for cleanup tracking
+            channels[channelName].subscriptionData = subscriptionData;
+            channels[channelName].topicName = topicName;
+            
+            vscode.window.showInformationMessage(`Subscribed to topic: ${topicName}`);
+          } else {
+            // Revert UI state if subscription failed
+            tree.setTopicSubscriptionState(topicName, false);
+            channels[channelName].appendLine("Failed to create subscription");
+            vscode.window.showErrorMessage(`Failed to subscribe to topic: ${topicName}`);
+          }
+        }
+      ),
+      vscode.commands.registerCommand(
+        `${extensionHandle}.unsubscribe-from-topic`,
+        async (topic) => {
+          if (!topic || !topic.label) {
+            vscode.window.showErrorMessage("No topic selected");
+            return;
+          }
+
+          if (!ws || !ws.isConnected()) {
+            vscode.window.showErrorMessage("Not connected to ROS bridge");
+            return;
+          }
+
+          const topicName = topic.label;
+          
+          // Update UI immediately
+          tree.setTopicSubscriptionState(topicName, false);
+          
+          // Get the topic subscription
+          const topics = ws.topics;
+          const subscription = topics ? topics.get(topicName) : null;
+          
+          // Clean up visualization panel if exists
+          if (
+            subscription &&
+            subscription.subscriptionData &&
+            subscription.subscriptionData.visualizationPanel
+          ) {
+            subscription.subscriptionData.visualizationPanel.dispose();
+            subscription.subscriptionData.visualizationPanel = null;
+            subscription.subscriptionData.creatingPanel = false;
+          }
+          
+          // Unsubscribe from the topic
+          const unsubscribed = ws.unsubscribeTopic(topicName);
+          
+          // Clean up subscription data
+          if (subscription && subscription.subscriptionData) {
+            subscription.subscriptionData.pendingMessage = null;
+            subscription.subscriptionData = null;
+          }
+          
+          // Clean up output channels
+          const channelName = `ROS Topic: ${topicName}`;
+          if (channels[channelName]) {
+            channels[channelName].clear();
+            channels[channelName].appendLine(`[Unsubscribed from ${topicName}]`);
+            channels[channelName].hide();
+            // Dispose the channel
+            channels[channelName].dispose();
+            delete channels[channelName];
+            outputChannels.delete(channelName);
+          }
+          
+          // Also clean up any legacy node-based channels
+          for (const [name, channel] of outputChannels) {
+            if (name !== "main" && name.includes(topicName)) {
+              channel.clear();
+              channel.hide();
+              channel.dispose();
+              outputChannels.delete(name);
+              if (channels[name]) {
+                delete channels[name];
+              }
+            }
+          }
+          
+          if (unsubscribed) {
+            vscode.window.showInformationMessage(`Unsubscribed from topic: ${topicName}`);
+          } else {
+            // Revert UI state if unsubscribe failed
+            tree.setTopicSubscriptionState(topicName, true);
+            vscode.window.showWarningMessage(`Failed to unsubscribe from topic: ${topicName}`);
+          }
+        }
+      ),
+      vscode.commands.registerCommand(
+        `${extensionHandle}.inspect-topic-from-tree`,
+        async (topic) => {
+          if (!topic) {
+            vscode.window.showErrorMessage("No topic selected");
+            return;
+          }
+          
+          // Use the existing inspect-topic-message command
+          vscode.commands.executeCommand(
+            `${extensionHandle}.inspect-topic-message`,
+            topic
+          );
+        }
+      ),
+      vscode.commands.registerCommand(
         `${extensionHandle}.inspect-service-type`,
         async (treeItem) => {
           if (!treeItem) {
@@ -617,6 +956,14 @@ function activate(context) {
 
 
     channels["main"].show();
+    
+    // Store references for cleanup in deactivate
+    global.vsCodeRosExtensionContext = {
+      ws,
+      outputChannels,
+      channels,
+      tree
+    };
   } catch (error) {
     console.error("Activation error:", error);
     vscode.window.showErrorMessage(
@@ -626,6 +973,68 @@ function activate(context) {
   }
 }
 
-function deactivate() {}
+function deactivate() {
+  // Dispose all resources to prevent memory leaks
+  try {
+    // Access variables from activate scope if they exist
+    const context = global.vsCodeRosExtensionContext;
+    if (!context) return;
+    
+    const { ws, outputChannels, channels, tree } = context;
+    
+    // Disconnect from ROS bridge if connected
+    if (ws && ws.isConnected()) {
+      ws.disconnect();
+    }
+    
+    // Dispose all output channels
+    if (outputChannels) {
+      outputChannels.forEach((channel) => {
+        channel.dispose();
+      });
+      outputChannels.clear();
+    }
+    
+    // Dispose main channels
+    if (channels) {
+      Object.values(channels).forEach(channel => {
+        if (channel && channel.dispose) {
+          channel.dispose();
+        }
+      });
+    }
+    
+    // Dispose all webview panels
+    if (VisualizationPanel && VisualizationPanel.disposeAll) {
+      VisualizationPanel.disposeAll();
+    }
+    
+    if (ConnectionDashboard && ConnectionDashboard.currentPanel) {
+      ConnectionDashboard.currentPanel.dispose();
+    }
+    
+    if (ParametersPanel && ParametersPanel.disposeAll) {
+      ParametersPanel.disposeAll();
+    }
+    
+    if (BagRecorderPanel && BagRecorderPanel.currentPanel) {
+      BagRecorderPanel.currentPanel.dispose();
+    }
+    
+    if (MessageInspectorPanel && MessageInspectorPanel.currentPanel) {
+      MessageInspectorPanel.currentPanel.dispose();
+    }
+    
+    // Clear tree provider
+    if (tree) {
+      tree.resetAllCheckboxes();
+    }
+    
+    // Clear global context
+    global.vsCodeRosExtensionContext = null;
+  } catch (error) {
+    console.error('Error during deactivation:', error);
+  }
+}
 
 module.exports = { activate, deactivate };

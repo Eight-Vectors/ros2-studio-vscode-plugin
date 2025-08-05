@@ -47,6 +47,11 @@ class ConnectionDashboard {
     this._updateContent(rosbridgeClient);
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
+    // Clear any existing interval before creating a new one
+    if (this._updateInterval) {
+      clearInterval(this._updateInterval);
+    }
+    
     // Start periodic updates with a longer interval to reduce logging
     this._updateInterval = setInterval(() => {
       this._updateSystemInfo();

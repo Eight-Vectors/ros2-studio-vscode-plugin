@@ -13,6 +13,10 @@ class VisualizationPanel {
     this._viewMode = viewMode;
     this._disposables = [];
     this._rawData = null;
+    this._dataHistoryLimit = 10; // Further reduced limit to prevent memory growth
+    this._dataHistory = [];
+    this._lastUpdateTime = 0;
+    this._updateThrottle = 100; // Minimum ms between updates
 
     this._panel.webview.html = this._getHtmlForWebview();
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
@@ -191,7 +195,32 @@ class VisualizationPanel {
   }
 
   updateData(data) {
-    this._rawData = data;
+    const now = Date.now();
+    
+    // Throttle updates to prevent overwhelming the webview
+    if (now - this._lastUpdateTime < this._updateThrottle) {
+      return;
+    }
+    this._lastUpdateTime = now;
+    
+    // For large data, create a shallow copy to avoid memory leaks
+    this._rawData = JSON.parse(JSON.stringify(data));
+    
+    // Limit data history to prevent memory growth
+    if (this._dataHistory.length >= this._dataHistoryLimit) {
+      this._dataHistory.shift(); // Remove oldest entry
+    }
+    
+    // Store only essential data in history
+    const historyEntry = {
+      timestamp: now,
+      data: this._messageType === 'OccupancyGrid' ? 
+        { info: data.info, dataLength: data.data?.length } : 
+        this._messageType === 'LaserScan' ?
+        { angle_min: data.angle_min, angle_max: data.angle_max, rangesLength: data.ranges?.length } :
+        data
+    };
+    this._dataHistory.push(historyEntry);
 
     if (this._panel && this._panel.webview) {
       this._panel.webview.postMessage({
@@ -213,6 +242,17 @@ class VisualizationPanel {
     const panelKey = `${this._topicName}_${this._messageType}`;
     VisualizationPanel.currentPanels.delete(panelKey);
     VisualizationPanel.pendingPanels.delete(panelKey);
+    
+    // Clear data to free memory
+    this._rawData = null;
+    this._dataHistory = [];
+    
+    // Clean up webview
+    if (this._panel && this._panel.webview) {
+      this._panel.webview.postMessage({
+        command: "cleanup"
+      });
+    }
 
     this._panel.dispose();
 
@@ -1077,6 +1117,14 @@ class VisualizationPanel {
               // Render visualization
               if (currentViewMode !== 'raw') {
                 renderVisualization(currentData);
+              }
+              break;
+            case 'cleanup':
+              // Clean up resources when panel is disposed
+              cleanupURDF();
+              currentData = null;
+              if (typeof urdfAnimationId !== 'undefined' && urdfAnimationId) {
+                cancelAnimationFrame(urdfAnimationId);
               }
               break;
           }

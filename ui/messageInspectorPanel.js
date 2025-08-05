@@ -38,6 +38,11 @@ class MessageInspectorPanel {
     this._update();
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
+    // Listen for theme changes
+    vscode.window.onDidChangeActiveColorTheme(() => {
+      this._update();
+    }, null, this._disposables);
+
     this._panel.webview.onDidReceiveMessage(
       (message) => {
         switch (message.command) {

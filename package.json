@@ -2,7 +2,7 @@
   "name": "vscode-ros-extension",
   "displayName": "ROS Bridge Extension",
   "description": "Connect to ROS systems via rosbridge, visualize topics, call services, and interact with ROS nodes directly from VS Code",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "publisher": "eightvectors",
   "icon": "media/industrial-robot.png",
   "galleryBanner": {
@@ -81,6 +81,14 @@
         "title": "Subscribe"
       },
       {
+        "command": "vscode-ros-extension.subscribe-to-topic",
+        "title": "Subscribe"
+      },
+      {
+        "command": "vscode-ros-extension.unsubscribe-from-topic",
+        "title": "Unsubscribe"
+      },
+      {
         "command": "vscode-ros-extension.get-parameters",
         "title": "Get Parameters",
         "icon": "$(settings-gear)"
@@ -110,6 +118,11 @@
         "icon": "$(info)"
       },
       {
+        "command": "vscode-ros-extension.inspect-topic-from-tree",
+        "title": "Inspect",
+        "icon": "$(info)"
+      },
+      {
         "command": "vscode-ros-extension.inspect-service-type",
         "title": "Inspect Service Type",
         "icon": "$(info)"
@@ -133,6 +146,20 @@
           "type": "string",
           "default": "/home/ros/bags",
           "description": "Default directory path on the remote ROS machine for saving bag files"
+        },
+        "vscode-ros-extension.messageThrottleRate": {
+          "type": "number",
+          "default": 100,
+          "minimum": 0,
+          "maximum": 1000,
+          "description": "Minimum milliseconds between message updates (0 to disable throttling)"
+        },
+        "vscode-ros-extension.maxMessageBufferSize": {
+          "type": "number",
+          "default": 100,
+          "minimum": 10,
+          "maximum": 1000,
+          "description": "Maximum number of messages to keep in buffer per topic"
         }
       }
     },
@@ -156,7 +183,7 @@
       "extContainerView": [
         {
           "id": "extNodesView",
-          "name": "ROS Nodes",
+          "name": "ROS Topics",
           "icon": "media/industrial-robot.svg"
         }
       ]
@@ -186,25 +213,36 @@
       ],
       "view/item/context": [
         {
-          "command": "vscode-ros-extension.toggle-subscription",
-          "when": "view == extNodesView && viewItem == publisher"
-        },
-        {
           "command": "vscode-ros-extension.disconnect-bridge",
           "when": "view == extNodesView && viewItem == nodeTree"
         },
         {
-          "command": "vscode-ros-extension.get-parameters",
-          "when": "view == extNodesView && viewItem == node"
+          "command": "vscode-ros-extension.add-to-bag-recorder",
+          "when": "view == extNodesView && viewItem == topic"
         },
         {
-          "command": "vscode-ros-extension.add-to-bag-recorder",
-          "when": "view == extNodesView && (viewItem == publisher || viewItem == subscribers)"
+          "command": "vscode-ros-extension.subscribe-to-topic",
+          "when": "view == extNodesView && viewItem == topic",
+          "group": "inline@1"
+        },
+        {
+          "command": "vscode-ros-extension.unsubscribe-from-topic",
+          "when": "view == extNodesView && viewItem == topicSubscribed",
+          "group": "inline@1"
+        },
+        {
+          "command": "vscode-ros-extension.inspect-topic-from-tree",
+          "when": "view == extNodesView && viewItem == topic",
+          "group": "inline@10"
+        },
+        {
+          "command": "vscode-ros-extension.inspect-topic-from-tree",
+          "when": "view == extNodesView && viewItem == topicSubscribed",
+          "group": "inline@10"
         },
         {
           "command": "vscode-ros-extension.inspect-topic-message",
-          "when": "view == extNodesView && (viewItem == publisher || viewItem == subscribers)",
-          "group": "inline"
+          "when": "view == extNodesView && viewItem == topic"
         },
         {
           "command": "vscode-ros-extension.inspect-service-type",
@@ -230,6 +268,7 @@
   "devDependencies": {
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
+    "copy-webpack-plugin": "^13.0.0",
     "eslint": "^9.9.1",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4"

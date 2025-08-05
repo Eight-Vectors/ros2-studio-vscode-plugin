@@ -14,6 +14,12 @@ class RosbridgeClient {
     this.reconnectDelay = 1000; // Start with 1 second
     this.isReconnecting = false;
     this.shouldReconnect = true;
+    this.reconnectTimeout = null;
+    this.eventHandlers = {
+      connection: null,
+      error: null,
+      close: null
+    };
   }
 
   connect() {
@@ -21,32 +27,40 @@ class RosbridgeClient {
       return Promise.resolve();
     }
 
+    // Clean up old event handlers if they exist
+    this.cleanupEventHandlers();
+
     return new Promise((resolve, reject) => {
       this.ros = new ROSLIB.Ros({
         url: this.url,
       });
 
-      this.ros.on("connection", () => {
+      // Store event handlers for cleanup
+      this.eventHandlers.connection = () => {
         vscode.window.showInformationMessage("Connected to ROS bridge");
         this.reconnectAttempts = 0;
         this.reconnectDelay = 1000;
         this.isReconnecting = false;
         resolve();
-      });
+      };
 
-      this.ros.on("error", (error) => {
+      this.eventHandlers.error = (error) => {
         vscode.window.showErrorMessage(`ROS bridge error: ${error}`);
         reject(error);
-      });
+      };
 
-      this.ros.on("close", () => {
+      this.eventHandlers.close = () => {
         if (this.shouldReconnect) {
           vscode.window.showWarningMessage("Disconnected from ROS bridge. Attempting to reconnect...");
           this.handleReconnection();
         } else {
           vscode.window.showWarningMessage("Disconnected from ROS bridge");
         }
-      });
+      };
+
+      this.ros.on("connection", this.eventHandlers.connection);
+      this.ros.on("error", this.eventHandlers.error);
+      this.ros.on("close", this.eventHandlers.close);
     });
   }
 
@@ -72,7 +86,7 @@ class RosbridgeClient {
       `Reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay / 1000} seconds...`
     );
 
-    setTimeout(() => {
+    this.reconnectTimeout = setTimeout(() => {
       if (this.shouldReconnect) {
         this.connectionPromise = this.connect()
           .then(() => {
@@ -106,6 +120,11 @@ class RosbridgeClient {
 
     const existingTopic = this.topics.get(topicName);
     if (existingTopic) {
+      // Unsubscribe previous callback if exists
+      const oldCallback = this.subscriptions.get(topicName);
+      if (oldCallback) {
+        existingTopic.unsubscribe(oldCallback);
+      }
       existingTopic.subscribe(callback);
       this.subscriptions.set(topicName, callback);
       return existingTopic;
@@ -115,6 +134,9 @@ class RosbridgeClient {
       ros: this.ros,
       name: topicName,
       messageType: messageType,
+      throttle_rate: 500, // Throttle to max 2 messages per second for better performance
+      queue_size: 1, // Only keep latest message
+      compression: 'none'
     });
 
     topic.subscribe(callback);
@@ -130,6 +152,8 @@ class RosbridgeClient {
 
     if (topic && callback) {
       topic.unsubscribe(callback);
+      // Properly dispose of the topic to free resources
+      topic.ros = null;
       this.topics.delete(topicName);
       this.subscriptions.delete(topicName);
       return true;
@@ -813,19 +837,50 @@ class RosbridgeClient {
     return parsed;
   }
 
+  cleanupEventHandlers() {
+    if (this.ros) {
+      if (this.eventHandlers.connection) {
+        this.ros.off("connection", this.eventHandlers.connection);
+      }
+      if (this.eventHandlers.error) {
+        this.ros.off("error", this.eventHandlers.error);
+      }
+      if (this.eventHandlers.close) {
+        this.ros.off("close", this.eventHandlers.close);
+      }
+    }
+    this.eventHandlers = {
+      connection: null,
+      error: null,
+      close: null
+    };
+  }
+
   disconnect() {
     this.shouldReconnect = false;
     
+    // Clear any pending reconnection timeout
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+    
     if (this.ros) {
+      // Unsubscribe and clean up all topics
       this.topics.forEach((topic, topicName) => {
         const callback = this.subscriptions.get(topicName);
         if (callback) {
           topic.unsubscribe(callback);
         }
+        // Properly dispose of the topic
+        topic.ros = null;
       });
 
       this.topics.clear();
       this.subscriptions.clear();
+
+      // Clean up event handlers
+      this.cleanupEventHandlers();
 
       this.ros.close();
       this.ros = null;

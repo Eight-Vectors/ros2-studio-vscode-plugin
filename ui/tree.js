@@ -25,10 +25,23 @@ class Node extends Item {
 }
 
 class Topic extends Item {
-  constructor(label, node, collapsibleState) {
+  constructor(label, type, address, collapsibleState, rosbridgeClient = null, isSubscribed = false) {
     super(label, collapsibleState);
-    this.node = node;
-    this.contextValue = "topic";
+    this.type = type;
+    this.address = address;
+    this.contextValue = isSubscribed ? "topicSubscribed" : "topic";
+    this.tooltip = `${label} (${type})`;
+    this.description = ""; // Remove type from display to save space
+    this.messageType = type;
+    this.rosbridgeClient = rosbridgeClient;
+    this.isSubscribed = isSubscribed;
+    // Remove icon - we'll use text-based Subscribe/Unsubscribe buttons
+  }
+  
+  setSubscribed(state) {
+    this.isSubscribed = state;
+    // Update contextValue to trigger button visibility
+    this.contextValue = state ? "topicSubscribed" : "topic";
   }
 }
 
@@ -53,9 +66,8 @@ class Publisher extends vscode.TreeItem {
   }
 
   updateIcon() {
-    this.iconPath = new vscode.ThemeIcon(
-      this.isChecked ? "check" : "circle-outline"
-    );
+    // Remove icon for publishers
+    this.iconPath = undefined;
   }
 
   toggleChecked() {
@@ -77,7 +89,8 @@ class Subscriber extends vscode.TreeItem {
     this.address = address;
     this.messageType = messageType;
     this.contextValue = "subscribers";
-    this.iconPath = new vscode.ThemeIcon("eye");
+    // Remove icon for subscribers
+    this.iconPath = undefined;
   }
 }
 
@@ -110,6 +123,8 @@ class PublishersProvider {
 
     this.pubs = {};
     this.subs = {};
+    this.topics = {}; // Track topic items
+    this.subscribedTopics = new Set(); // Track which topics are subscribed
 
     this.channel = channel;
 
@@ -135,22 +150,9 @@ class PublishersProvider {
     if (!element) {
       return this.getTrees();
     } else if (element instanceof Tree) {
-      return this.getNodes(element);
-    } else if (element instanceof Node) {
-      return this.getTopics(element);
+      return this.getTopicsList(element);
     } else if (element instanceof Topic) {
-      switch (element.label) {
-        case "publishers":
-          return this.getPublishers(element);
-        case "subscribers":
-          return this.getSubscribers(element);
-        case "service_clients":
-          return this.getServiceClients(element);
-        case "action_clients":
-          return this.getActionClients(element);
-        default:
-          return Promise.resolve([]);
-      }
+      return this.getTopicDetails(element);
     } else {
       return Promise.resolve([]);
     }
@@ -161,8 +163,32 @@ class PublishersProvider {
     if (pub) {
       pub.toggleChecked();
       this._onDidChangeTreeData.fire(pub);
+      
+      // Update topic subscription state
+      const topicName = pub.label;
+      if (pub.isChecked) {
+        this.subscribedTopics.add(topicName);
+      } else {
+        // Check if any other publishers for this topic are still subscribed
+        let anySubscribed = false;
+        for (const key in this.pubs) {
+          if (this.pubs[key].label === topicName && this.pubs[key].isChecked && key !== lbl) {
+            anySubscribed = true;
+            break;
+          }
+        }
+        if (!anySubscribed) {
+          this.subscribedTopics.delete(topicName);
+        }
+      }
+      
+      // Update topic icon
+      if (this.topics[topicName]) {
+        this.topics[topicName].setSubscribed(this.subscribedTopics.has(topicName));
+        this._onDidChangeTreeData.fire(this.topics[topicName]);
+      }
     }
-    if (pub.isChecked) {
+    if (pub && pub.isChecked) {
       return [pub.isChecked, pub.address];
     }
     return [false];
@@ -175,7 +201,36 @@ class PublishersProvider {
         this.pubs[key].updateIcon();
       }
     }
+    
+    // Reset all topic subscription states
+    this.subscribedTopics.clear();
+    for (const topicName in this.topics) {
+      this.topics[topicName].setSubscribed(false);
+    }
+    
     this._onDidChangeTreeData.fire();
+  }
+  
+  // Update subscription state for a specific topic without full refresh
+  setTopicSubscriptionState(topicName, isSubscribed) {
+    if (isSubscribed) {
+      this.subscribedTopics.add(topicName);
+    } else {
+      this.subscribedTopics.delete(topicName);
+    }
+    
+    // Update the topic item if it exists
+    const topicItem = this.topics[topicName];
+    if (topicItem) {
+      topicItem.setSubscribed(isSubscribed);
+      // Fire change event only for this specific topic
+      this._onDidChangeTreeData.fire(topicItem);
+    }
+  }
+  
+  // Get topic item by name
+  getTopicItem(topicName) {
+    return this.topics[topicName];
   }
 
   async getTrees() {
@@ -184,24 +239,29 @@ class PublishersProvider {
     );
   }
 
-  async getNodes(tree) {
-    // Getting nodes from rosbridge
+  // Removed getNodes method - no longer needed for topic-centric view
 
+  async getTopicsList(tree) {
     if (this.rosbridgeClient && this.rosbridgeClient.isConnected()) {
-      // Use rosbridge to get nodes
-      // Using rosbridge to get nodes
       return new Promise((resolve) => {
-        this.rosbridgeClient.getNodes((nodes) => {
-          // Received nodes from rosbridge
-          const nodeItems = nodes.map(
-            (nodeName) =>
-              new Node(
-                nodeName,
-                tree.address,
-                vscode.TreeItemCollapsibleState.Collapsed
-              )
-          );
-          resolve(nodeItems);
+        this.rosbridgeClient.getTopics((topics) => {
+          const topicItems = topics
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((topic) => {
+                const isSubscribed = this.subscribedTopics.has(topic.name);
+                const topicItem = new Topic(
+                  topic.name,
+                  topic.type,
+                  tree.address,
+                  vscode.TreeItemCollapsibleState.Collapsed,
+                  this.rosbridgeClient,
+                  isSubscribed
+                );
+                this.topics[topic.name] = topicItem;
+                return topicItem;
+              }
+            );
+          resolve(topicItems);
         });
       });
     } else {
@@ -210,14 +270,61 @@ class PublishersProvider {
     }
   }
 
-  getTopics(node) {
+  async getTopicDetails(topic) {
     if (this.rosbridgeClient && this.rosbridgeClient.isConnected()) {
-      // Return categories for publishers, subscribers, service_clients, and action_clients
-      const categories = ["publishers", "subscribers", "service_clients", "action_clients"];
-      return categories.map(
-        (label) =>
-          new Topic(label, node, vscode.TreeItemCollapsibleState.Collapsed)
-      );
+      return new Promise((resolve) => {
+        // Get all nodes to find publishers and subscribers
+        this.rosbridgeClient.getNodes((nodes) => {
+          const details = [];
+          let processedNodes = 0;
+          
+          if (nodes.length === 0) {
+            resolve([]);
+            return;
+          }
+          
+          // Check each node for publishers/subscribers of this topic
+          nodes.forEach((nodeName) => {
+            this.rosbridgeClient.getNodeDetails(nodeName, (nodeDetails) => {
+              // Check if node publishes to this topic
+              if (nodeDetails.publishing && nodeDetails.publishing.includes(topic.label)) {
+                const pubKey = `${nodeName}${topic.label}`;
+                const existingPub = this.pubs[pubKey];
+                const isChecked = existingPub ? existingPub.isChecked : false;
+                
+                const pub = new Publisher(
+                  `${nodeName} (publisher)`,
+                  nodeName,
+                  topic.address,
+                  isChecked,
+                  vscode.TreeItemCollapsibleState.None,
+                  undefined, // Remove command from publisher nodes
+                  topic.type
+                );
+                this.pubs[pubKey] = pub;
+                details.push(pub);
+              }
+              
+              // Check if node subscribes to this topic
+              if (nodeDetails.subscribing && nodeDetails.subscribing.includes(topic.label)) {
+                const sub = new Subscriber(
+                  `${nodeName} (subscriber)`,
+                  nodeName,
+                  topic.address,
+                  vscode.TreeItemCollapsibleState.None,
+                  topic.type
+                );
+                details.push(sub);
+              }
+              
+              processedNodes++;
+              if (processedNodes === nodes.length) {
+                resolve(details);
+              }
+            });
+          });
+        });
+      });
     } else {
       return [];
     }
@@ -228,90 +335,9 @@ class PublishersProvider {
     return [];
   }
 
-  async getPublishers(topic) {
-    if (this.rosbridgeClient && this.rosbridgeClient.isConnected()) {
-      return new Promise((resolve) => {
-        const nodeName = topic.node.label;
-        
-        // Get node-specific details
-        this.rosbridgeClient.getNodeDetails(nodeName, (details) => {
-          const publishingTopics = details.publishing || [];
-          
-          // Get all topics to find their types
-          this.rosbridgeClient.getTopics((allTopics) => {
-            // Create a map of topic names to types
-            const topicTypeMap = {};
-            allTopics.forEach(topicInfo => {
-              topicTypeMap[topicInfo.name] = topicInfo.type;
-            });
-            
-            // Create publishers only for topics this node publishes
-            const publishers = publishingTopics.map((topicName) => {
-              const topicType = topicTypeMap[topicName] || "unknown";
-              const pub = new Publisher(
-                topicName,
-                nodeName,
-                topic.node.address,
-                false,
-                vscode.TreeItemCollapsibleState.None,
-                {
-                  command: `${extensionHandle}.toggle-subscription`,
-                  title: "Toggle Publisher",
-                  arguments: [`${nodeName}${topicName}`, topicType],
-                },
-                topicType
-              );
-              this.pubs[`${nodeName}${topicName}`] = pub;
-              return pub;
-            });
-            
-            resolve(publishers);
-          });
-        });
-      });
-    } else {
-      return [];
-    }
-  }
+  // Removed getPublishers method - functionality moved to getTopicDetails
 
-  async getSubscribers(topic) {
-    if (this.rosbridgeClient && this.rosbridgeClient.isConnected()) {
-      return new Promise((resolve) => {
-        const nodeName = topic.node.label;
-        
-        // Get node-specific details
-        this.rosbridgeClient.getNodeDetails(nodeName, (details) => {
-          const subscribingTopics = details.subscribing || [];
-          
-          // Get all topics to find their types
-          this.rosbridgeClient.getTopics((allTopics) => {
-            // Create a map of topic names to types
-            const topicTypeMap = {};
-            allTopics.forEach(topicInfo => {
-              topicTypeMap[topicInfo.name] = topicInfo.type;
-            });
-            
-            // Create subscribers only for topics this node subscribes to
-            const subscribers = subscribingTopics.map((topicName) => {
-              const topicType = topicTypeMap[topicName] || "unknown";
-              const sub = new Subscriber(
-                topicName,
-                nodeName,
-                topic.node.address,
-                vscode.TreeItemCollapsibleState.None,
-                topicType
-              );
-              return sub;
-            });
-            
-            resolve(subscribers);
-          });
-        });
-      });
-    } else {
-      return [];
-    }
-  }
+  // Removed getSubscribers method - functionality moved to getTopicDetails
 
   async getServiceClients(topic) {
     if (this.rosbridgeClient && this.rosbridgeClient.isConnected()) {
