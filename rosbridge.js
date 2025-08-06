@@ -29,6 +29,21 @@ class RosbridgeClient {
     this.onReconnectionCallback = onReconnection;
   }
 
+  formatError(error) {
+    if (error instanceof Error) {
+      return error.message;
+    } else if (typeof error === 'object' && error !== null) {
+      if (error.message) return error.message;
+      if (error.error) return error.error;
+      if (error.reason) return error.reason;
+      if (error.code) return `Error code: ${error.code}`;
+      return JSON.stringify(error);
+    } else if (typeof error === 'string') {
+      return error;
+    }
+    return String(error);
+  }
+
   connect() {
     if (this.ros && this.ros.isConnected) {
       return Promise.resolve();
@@ -57,7 +72,15 @@ class RosbridgeClient {
       };
 
       this.eventHandlers.error = (error) => {
-        vscode.window.showErrorMessage(`ROS 2 bridge error: ${error}`);
+        const errorMessage = this.formatError(error);
+        
+        // Log error to output channel
+        this.pChannel.appendLine(`ROS 2 bridge connection error: ${errorMessage}`);
+        
+        // Auto-show the output channel on error
+        this.pChannel.show(true);
+        
+        vscode.window.showErrorMessage(`ROS 2 bridge error: ${errorMessage}`);
         reject(error);
       };
 

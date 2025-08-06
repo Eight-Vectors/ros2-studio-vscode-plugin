@@ -26,6 +26,21 @@ try {
   vscode.window.showErrorMessage(`Module load error: ${error.message}`);
 }
 
+function formatError(error) {
+  if (error instanceof Error) {
+    return error.message;
+  } else if (typeof error === 'object' && error !== null) {
+    if (error.message) return error.message;
+    if (error.error) return error.error;
+    if (error.reason) return error.reason;
+    if (error.code) return `Error code: ${error.code}`;
+    return JSON.stringify(error);
+  } else if (typeof error === 'string') {
+    return error;
+  }
+  return String(error);
+}
+
 function updateTopicMessageRate(topicName, topicRates) {
   const now = Date.now();
   
@@ -395,9 +410,18 @@ function activate(context) {
                 }, 60000); // Run every minute
               })
               .catch((error) => {
-                channels["main"].appendLine(`Failed to connect: ${error}`);
+                const errorMessage = formatError(error);
+                
+                // Log error to output channel
+                channels["main"].appendLine(`Failed to connect to rosbridge at ${customUrl}`);
+                channels["main"].appendLine(`Error: ${errorMessage}`);
+                
+                // Auto-show the output channel on error
+                channels["main"].show(true);
+                
+                // Show user-friendly error message
                 vscode.window.showErrorMessage(
-                  `Failed to connect to rosbridge: ${error}`
+                  `Failed to connect to rosbridge: ${errorMessage}`
                 );
               });
           } else {

@@ -78,7 +78,7 @@ Connect to ROS 2 systems via rosbridge WebSocket protocol directly from VS Code.
 1. **Start rosbridge** on your ROS 2 system:
 
    ```bash
-   roslaunch rosbridge_server rosbridge_websocket.launch
+   ros2 launch rosbridge_server rosbridge_websocket_launch.xml
    ```
 
 2. **Connect to ROS 2**:
