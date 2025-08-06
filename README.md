@@ -1,18 +1,18 @@
-# ROS Bridge Extension for Visual Studio Code
+# ROS 2 Bridge Extension for Visual Studio Code
 
 [![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/eightvectors.vscode-ros-extension)](https://marketplace.visualstudio.com/items?itemName=eightvectors.vscode-ros-extension)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Connect to ROS systems via rosbridge WebSocket protocol directly from VS Code. Visualize topics, call services, and interact with ROS nodes without leaving your development environment.
+Connect to ROS 2 systems via rosbridge WebSocket protocol directly from VS Code. Visualize topics, call services, and interact with ROS 2 nodes without leaving your development environment.
 
 ## 🚀 Features
 
 ### Core Functionality
 
-- **ROS Entity Discovery** - Browse nodes, topics, services, publishers, and subscribers in a tree view
-- **Topic Subscriptions** - Subscribe/unsubscribe to ROS topics with real-time message display
-- **Service Calls** - Call ROS services with JSON parameters and view responses
-- **WebSocket Connection** - Connect to ROS systems via rosbridge WebSocket protocol
+- **ROS 2 Entity Discovery** - Browse nodes, topics, services, publishers, and subscribers in a tree view
+- **Topic Subscriptions** - Subscribe/unsubscribe to ROS 2 topics with real-time message display
+- **Service Calls** - Call ROS 2 services with JSON parameters and view responses
+- **WebSocket Connection** - Connect to ROS 2 systems via rosbridge WebSocket protocol
 
 ### Advanced Visualization
 
@@ -30,14 +30,14 @@ Connect to ROS systems via rosbridge WebSocket protocol directly from VS Code. V
 
 - **Auto-reconnection** - Automatic reconnection to rosbridge on disconnect
 - **Configurable Connection** - Custom WebSocket URL configuration
-- **Node Parameter Configuration** - View and modify ROS2 node parameters in real-time
-- **Bag Recorder Panel** - Select topics and generate ROS2 bag record commands
-- **Message/Service/Action Inspector** - Generate JSON templates for ROS message, service, and action types
+- **Node Parameter Configuration** - View and modify ROS 2 node parameters in real-time
+- **Bag Recorder Panel** - Select topics and generate ROS 2 bag record commands
+- **Message/Service/Action Inspector** - Generate JSON templates for ROS 2 message, service, and action types
 
 ## 📋 Requirements
 
 - Visual Studio Code 1.93.0 or higher
-- ROS system with rosbridge_server running
+- ROS 2 system with rosbridge_server running
 - WebSocket connection to rosbridge (default: `ws://localhost:9090`)
 
 ## 🔧 Installation
@@ -46,7 +46,7 @@ Connect to ROS systems via rosbridge WebSocket protocol directly from VS Code. V
 
 1. Open VS Code
 2. Go to Extensions (Ctrl+Shift+X)
-3. Search for "ROS Bridge Extension"
+3. Search for "ROS 2 Bridge Extension"
 4. Click Install
 
 ## ⚙️ Configuration
@@ -63,9 +63,9 @@ Connect to ROS systems via rosbridge WebSocket protocol directly from VS Code. V
 | --------------------- | --------------------------- | ---------------------------------------------------- |
 | `Connect to Remote`   | Connect to rosbridge server | Command Palette / Tree View                          |
 | `Disconnect`          | Disconnect from rosbridge   | Context Menu                                         |
-| `Refresh connection`  | Refresh ROS entities        | Tree View Button                                     |
+| `Refresh connection`  | Refresh ROS 2 entities      | Tree View Button                                     |
 | `Subscribe`           | Subscribe to topic          | Context Menu on Publishers                           |
-| `Call Service`        | Call a ROS service          | Context Menu on Services                             |
+| `Call Service`        | Call a ROS 2 service        | Context Menu on Services                             |
 | `Get Parameters`      | View/edit node parameters   | Context Menu on Nodes                                |
 | `Add to Bag Recorder` | Add topic to bag recorder   | Context Menu on Topics                               |
 | `Open Bag Recorder`   | Open bag recorder panel     | Command Palette                                      |
@@ -75,30 +75,30 @@ Connect to ROS systems via rosbridge WebSocket protocol directly from VS Code. V
 
 ### Getting Started
 
-1. **Start rosbridge** on your ROS system:
+1. **Start rosbridge** on your ROS 2 system:
 
    ```bash
    roslaunch rosbridge_server rosbridge_websocket.launch
    ```
 
-2. **Connect to ROS**:
+2. **Connect to ROS 2**:
 
    - Click the robot icon in the activity bar
    - Click "Connect" or use Command Palette: `Connect to Remote`
    - Default connection is `ws://localhost:9090`
 
-   ![Connect to ROS Bridge](media/gifs/connect-rosbridge.gif)
+   ![Connect to ROS 2 Bridge](https://raw.githubusercontent.com/Eight-Vectors/-vscode-ros-extension-assets/main/gifs/connect-rosbridge.gif)
 
-3. **Browse ROS entities**:
+3. **Browse ROS 2 entities**:
 
    - Expand the tree to see nodes, topics, and services
    - Right-click for context actions
 
-   ![Browse ROS Entities](media/gifs/browse-entities.gif)
+   ![Browse ROS 2 Entities](https://raw.githubusercontent.com/Eight-Vectors/-vscode-ros-extension-assets/main/gifs/browse-entities.gif)
 
 ### Visualization Features
 
-1. **Subscribe to a topic** - Right-click on a publisher topic in the ROS tree view and select "Subscribe"
+1. **Subscribe to a topic** - Right-click on a publisher topic in the ROS 2 tree view and select "Subscribe"
 2. **View modes** - When visualization opens, choose between:
    - Graphical view for interactive visualization
    - Raw data view for inspecting message structure
@@ -109,7 +109,7 @@ Connect to ROS systems via rosbridge WebSocket protocol directly from VS Code. V
    - Scroll to zoom
    - Right-click drag to pan
 
-![Topic Visualization](media/gifs/topic-visualization.gif)
+![Topic Visualization](https://raw.githubusercontent.com/Eight-Vectors/-vscode-ros-extension-assets/main/gifs/topic-visualization.gif)
 
 ### Supported Visualization Types
 
@@ -121,7 +121,7 @@ Connect to ROS systems via rosbridge WebSocket protocol directly from VS Code. V
 
 ### Node Parameter Configuration
 
-The extension provides a comprehensive parameter configuration panel for ROS2 nodes:
+The extension provides a comprehensive parameter configuration panel for ROS 2 nodes:
 
 1. **Access Parameters** - Right-click on any node in the tree view and select "Get Parameters"
 2. **Features**:
@@ -138,11 +138,11 @@ The extension provides a comprehensive parameter configuration panel for ROS2 no
    - Arrays (JSON format with validation)
    - Read-only display for complex objects
 
-![Node Parameters Panel](media/gifs/node-parameters.gif)
+![Node Parameters Panel](https://raw.githubusercontent.com/Eight-Vectors/-vscode-ros-extension-assets/main/gifs/node-parameters.gif)
 
-### ROS2 Bag Recorder
+### ROS 2 Bag Recorder
 
-The Bag Recorder panel helps you create ROS2 bag recording commands:
+The Bag Recorder panel helps you create ROS 2 bag recording commands:
 
 1. **Add Topics** - Right-click on any topic and select "Add to Bag Recorder"
 2. **Manage Topics**:
@@ -153,25 +153,25 @@ The Bag Recorder panel helps you create ROS2 bag recording commands:
    - Click "Generate Command" to create the `ros2 bag record` command
    - Command includes all selected topics
    - Copy the generated command from the panel
-   - Use the command on your ROS2 machine to start recording
+   - Use the command on your ROS 2 machine to start recording
 4. **Access Panel** - Use Command Palette: "Open Bag Recorder" or right-click topics
 
-![Bag Recorder Panel](media/gifs/bag-recorder.gif)
+![Bag Recorder Panel](https://raw.githubusercontent.com/Eight-Vectors/-vscode-ros-extension-assets/main/gifs/bag-recorder.gif)
 
-### ROS Message/Service/Action Type Inspector
+### ROS 2 Message/Service/Action Type Inspector
 
-The Message/Service/Action Type Inspector helps developers quickly generate JSON templates for ROS types:
+The Message/Service/Action Type Inspector helps developers quickly generate JSON templates for ROS 2 types:
 
 1. **Access Inspector** - Hover over any publisher, subscriber, or service in the tree view and click the info (ⓘ) icon
 2. **Features**:
-   - Automatically fetches type definition from ROS
+   - Automatically fetches type definition from ROS 2
    - Generates a complete JSON template with all fields
    - Supports nested message types
    - Handles arrays with example elements
    - Provides type information in comments
    - Includes default values for primitive types
 3. **Supported Types**:
-   - **Messages** - Generate templates for any ROS message type (from publishers/subscribers)
+   - **Messages** - Generate templates for any ROS 2 message type (from publishers/subscribers)
    - **Services** - Separate templates for request and response
    - **Actions** - Templates for goal, result, and feedback (when available)
 4. **Usage**:
@@ -179,7 +179,7 @@ The Message/Service/Action Type Inspector helps developers quickly generate JSON
    - Modify the values as needed for your use case
    - The template includes all fields with appropriate default values
 
-![Message/Service Inspector](media/gifs/message-service-inspector.gif)
+![Message/Service Inspector](https://raw.githubusercontent.com/Eight-Vectors/-vscode-ros-extension-assets/main/gifs/message-service-inspector.gif)
 
 ## 📄 License
 

@@ -13,7 +13,7 @@ class MessageInspectorPanel {
     } else {
       const panel = vscode.window.createWebviewPanel(
         "rosMessageInspector",
-        "ROS Message/Service Inspector",
+        "ROS 2 Message/Service Inspector",
         column || vscode.ViewColumn.One,
         {
           enableScripts: true,
@@ -310,7 +310,7 @@ class MessageInspectorPanel {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>ROS Message/Service Inspector</title>
+        <title>ROS 2 Message/Service Inspector</title>
         <style>
             body {
                 font-family: var(--vscode-font-family);
@@ -527,7 +527,7 @@ class MessageInspectorPanel {
     </head>
     <body>
         <div class="header">
-            <h1>ROS Message/Service Inspector</h1>
+            <h1>ROS 2 Message/Service Inspector</h1>
         </div>
         
         <div class="search-section">

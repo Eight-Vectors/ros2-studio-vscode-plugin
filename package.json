@@ -1,7 +1,7 @@
 {
   "name": "vscode-ros-extension",
-  "displayName": "ROS Plugin",
-  "description": "Connect to ROS systems via rosbridge, visualize topics, call services, and interact with ROS nodes directly from VS Code",
+  "displayName": "ROS 2 Plugin",
+  "description": "Connect to ROS 2 systems via rosbridge, visualize topics, call services, and interact with ROS 2 nodes directly from VS Code",
   "version": "0.3.1",
   "publisher": "eightvectors",
   "icon": "media/industrial-robot.png",
@@ -145,7 +145,7 @@
         "vscode-ros-extension.remoteBagPath": {
           "type": "string",
           "default": "/home/ros/bags",
-          "description": "Default directory path on the remote ROS machine for saving bag files"
+          "description": "Default directory path on the remote ROS 2 machine for saving bag files"
         },
         "vscode-ros-extension.messageThrottleRate": {
           "type": "number",
@@ -193,6 +193,37 @@
           "minimum": 0.1,
           "maximum": 10,
           "description": "Maximum memory (in MB) allowed for message buffer per topic before trimming old messages"
+        },
+        "vscode-ros-extension.staticTopics": {
+          "type": "array",
+          "default": ["/robot_description", "/tf_static", "/map_metadata", "/map"],
+          "description": "List of topic names that are considered static (publish once or rarely)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "vscode-ros-extension.staticTopicPatterns": {
+          "type": "array",
+          "default": [".*_static$", ".*_description$", ".*_metadata$"],
+          "description": "Regular expression patterns to match static topic names",
+          "items": {
+            "type": "string"
+          }
+        },
+        "vscode-ros-extension.staticMessageTypes": {
+          "type": "array",
+          "default": [".*Parameter.*", ".*Description.*"],
+          "description": "Regular expression patterns to match static message types",
+          "items": {
+            "type": "string"
+          }
+        },
+        "vscode-ros-extension.staticTopicAutoDetectRate": {
+          "type": "number",
+          "default": 0.1,
+          "minimum": 0.01,
+          "maximum": 10,
+          "description": "Message rate threshold (messages per second) below which topics are auto-detected as static"
         }
       }
     },
@@ -211,7 +242,7 @@
       "activitybar": [
         {
           "id": "extContainerView",
-          "title": "ROS Plugin",
+          "title": "ROS 2 Plugin",
           "icon": "media/industrial-robot.svg"
         }
       ]
@@ -220,12 +251,12 @@
       "extContainerView": [
         {
           "id": "extNodesView",
-          "name": "ROS Topics",
+          "name": "ROS 2 Topics",
           "icon": "media/industrial-robot.svg"
         },
         {
           "id": "extNodeListView",
-          "name": "ROS Nodes",
+          "name": "ROS 2 Nodes",
           "icon": "media/industrial-robot.svg"
         }
       ]

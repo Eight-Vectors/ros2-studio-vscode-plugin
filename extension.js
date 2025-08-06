@@ -26,34 +26,90 @@ try {
   vscode.window.showErrorMessage(`Module load error: ${error.message}`);
 }
 
-function isStaticTopic(topicName, messageType) {
-  // Topics that only publish once
-  const staticTopics = [
+function updateTopicMessageRate(topicName, topicRates) {
+  const now = Date.now();
+  
+  if (!topicRates.has(topicName)) {
+    topicRates.set(topicName, {
+      messageCount: 0,
+      firstMessageTime: now,
+      lastMessageTime: now,
+      messagesPerSecond: 0
+    });
+  }
+  
+  const rateInfo = topicRates.get(topicName);
+  rateInfo.messageCount++;
+  rateInfo.lastMessageTime = now;
+  
+  const timeDiff = (now - rateInfo.firstMessageTime) / 1000;
+  if (timeDiff > 0) {
+    rateInfo.messagesPerSecond = rateInfo.messageCount / timeDiff;
+  }
+  
+  if (timeDiff > 60) {
+    rateInfo.messageCount = 1;
+    rateInfo.firstMessageTime = now;
+  }
+}
+
+function isStaticTopic(topicName, messageType, topicRates) {
+  const config = vscode.workspace.getConfiguration("vscode-ros-extension");
+  
+  const staticTopics = config.get("staticTopics", [
     "/robot_description",
     "/tf_static",
     "/map_metadata",
-    "/clock",
-  ];
-
+    "/map"
+  ]);
+  
   if (staticTopics.includes(topicName)) {
     return true;
   }
-
-  // Check topic name patterns
-  if (
-    topicName.includes("_static") ||
-    topicName.includes("_description") ||
-    topicName.includes("_metadata")
-  ) {
-    return true;
+  
+  const topicPatterns = config.get("staticTopicPatterns", [
+    ".*_static$",
+    ".*_description$",
+    ".*_metadata$",
+  ]);
+  
+  for (const pattern of topicPatterns) {
+    try {
+      const regex = new RegExp(pattern);
+      if (regex.test(topicName)) {
+        return true;
+      }
+    } catch (e) {
+      console.warn(`Invalid regex pattern for static topics: ${pattern}`);
+    }
   }
-
-  // Check message type
-  if (
-    messageType &&
-    (messageType.includes("Parameter") || messageType.includes("Description"))
-  ) {
-    return true;
+  
+  if (messageType) {
+    const messageTypePatterns = config.get("staticMessageTypes", [
+      ".*Parameter.*",
+      ".*Description.*",
+    ]);
+    
+    for (const pattern of messageTypePatterns) {
+      try {
+        const regex = new RegExp(pattern);
+        if (regex.test(messageType)) {
+          return true;
+        }
+      } catch (e) {
+        console.warn(`Invalid regex pattern for static message types: ${pattern}`);
+      }
+    }
+  }
+  
+  if (topicRates && topicRates.has(topicName)) {
+    const rateInfo = topicRates.get(topicName);
+    const timeSinceFirstMessage = (Date.now() - rateInfo.firstMessageTime) / 1000;
+    const rateThreshold = config.get("staticTopicAutoDetectRate", 0.1);
+    
+    if (timeSinceFirstMessage > 10 && rateInfo.messagesPerSecond < rateThreshold) {
+      return true;
+    }
   }
 
   return false;
@@ -163,10 +219,13 @@ function activate(context) {
 
     // Create a Map to track all output channels for proper cleanup
     const outputChannels = new Map();
+    
+    // Track topic message rates for auto-detection
+    const topicMessageRates = new Map();
 
     // Create main output channel for extension logs
     channels["main"] = vscode.window.createOutputChannel(
-      "ROS Bridge Extension"
+      "ROS 2 Bridge Extension"
     );
     outputChannels.set("main", channels["main"]);
 
@@ -216,7 +275,7 @@ function activate(context) {
           const customUrl = await vscode.window.showInputBox({
             placeHolder: "ws://localhost:9090",
             prompt:
-              "Enter ROS Bridge WebSocket URL (e.g., ws://192.168.1.100:9090)",
+              "Enter ROS 2 Bridge WebSocket URL (e.g., ws://192.168.1.100:9090)",
             value: rosbridgeUrl,
             validateInput: (value) => {
               if (!value) {
@@ -237,6 +296,17 @@ function activate(context) {
             ws = new RosbridgeClient(customUrl, channels["main"]);
             tree.setRosbridgeClient(ws);
             nodeTree.setRosbridgeClient(ws);
+            
+            ws.setConnectionCallbacks(
+              () => {
+                tree.refresh();
+                nodeTree.refresh();
+              },
+              () => {
+                tree.refresh();
+                nodeTree.refresh();
+              }
+            );
 
             ws.waitForConnection()
               .then(() => {
@@ -387,6 +457,9 @@ function activate(context) {
 
           ws.disconnect();
           ws = null;
+          
+          // Clear topic message rates
+          topicMessageRates.clear();
 
           // Clear cleanup interval
           if (cleanupInterval) {
@@ -440,7 +513,7 @@ function activate(context) {
         async (treeItem, messageType) => {
           if (!ws || !(ws instanceof RosbridgeClient)) {
             vscode.window.showErrorMessage(
-              "No connection to ROS bridge. Please connect first."
+              "No connection to ROS 2 bridge. Please connect first."
             );
             return;
           }
@@ -515,7 +588,7 @@ function activate(context) {
               maxBufferSize: Math.min(maxBufferSize, maxMessagesToRetain), // Use retention limit
               lastMessageTime: 0,
               messageThrottle: messageThrottle,
-              isStatic: isStaticTopic(topicName, topicMessageType),
+              isStatic: isStaticTopic(topicName, topicMessageType, topicMessageRates),
             };
 
             const subscription = ws.subscribeTopic(
@@ -523,6 +596,8 @@ function activate(context) {
               topicMessageType,
               (msg) => {
                 const now = Date.now();
+                
+                updateTopicMessageRate(topicName, topicMessageRates);
 
                 // Skip if too soon
                 if (
@@ -659,7 +734,7 @@ function activate(context) {
         `${extensionHandle}.call-service`,
         async (serviceName) => {
           if (!ws || !ws.isConnected()) {
-            vscode.window.showErrorMessage("Not connected to ROS bridge");
+            vscode.window.showErrorMessage("Not connected to ROS 2 bridge");
             return;
           }
 
@@ -705,12 +780,12 @@ function activate(context) {
             typeof treeItem !== "object" ||
             treeItem.contextValue !== "node"
           ) {
-            vscode.window.showErrorMessage("Please select a valid ROS node");
+            vscode.window.showErrorMessage("Please select a valid ROS 2 node");
             return;
           }
 
           if (!ws || !ws.isConnected()) {
-            vscode.window.showErrorMessage("No active ROS bridge connection");
+            vscode.window.showErrorMessage("No active ROS 2 bridge connection");
             return;
           }
 
@@ -776,7 +851,7 @@ function activate(context) {
           const topicName = treeItem.label || treeItem.id;
 
           if (!ws || !ws.isConnected()) {
-            vscode.window.showErrorMessage("Not connected to ROS bridge");
+            vscode.window.showErrorMessage("Not connected to ROS 2 bridge");
             return;
           }
 
@@ -809,7 +884,7 @@ function activate(context) {
           }
 
           if (!ws || !ws.isConnected()) {
-            vscode.window.showErrorMessage("Not connected to ROS bridge");
+            vscode.window.showErrorMessage("Not connected to ROS 2 bridge");
             return;
           }
 
@@ -853,7 +928,7 @@ function activate(context) {
             pendingMessage: null,
             outputLineCount: 0,
             maxOutputLines: maxOutputLines, // Use configured value
-            isStatic: isStaticTopic(topicName, messageType),
+            isStatic: isStaticTopic(topicName, messageType, topicMessageRates),
             firstMessageTime: 0,
           };
 
@@ -867,6 +942,8 @@ function activate(context) {
             messageType,
             (msg) => {
               const now = Date.now();
+              
+              updateTopicMessageRate(topicName, topicMessageRates);
 
               // Skip if message comes too fast
               if (
@@ -1068,7 +1145,7 @@ function activate(context) {
           }
 
           if (!ws || !ws.isConnected()) {
-            vscode.window.showErrorMessage("Not connected to ROS bridge");
+            vscode.window.showErrorMessage("Not connected to ROS 2 bridge");
             return;
           }
 
@@ -1166,7 +1243,7 @@ function activate(context) {
           const serviceName = treeItem.label || treeItem.id;
 
           if (!ws || !ws.isConnected()) {
-            vscode.window.showErrorMessage("Not connected to ROS bridge");
+            vscode.window.showErrorMessage("Not connected to ROS 2 bridge");
             return;
           }
 
@@ -1220,7 +1297,7 @@ function activate(context) {
   } catch (error) {
     console.error("Activation error:", error);
     vscode.window.showErrorMessage(
-      `Failed to activate ROS Bridge Extension: ${error.message}`
+      `Failed to activate ROS 2 Bridge Extension: ${error.message}`
     );
     throw error;
   }
@@ -1235,7 +1312,7 @@ function deactivate() {
 
     const { ws, outputChannels, channels, tree } = context;
 
-    // Disconnect from ROS bridge if connected
+    // Disconnect from ROS 2 bridge if connected
     if (ws && ws.isConnected()) {
       ws.disconnect();
     }

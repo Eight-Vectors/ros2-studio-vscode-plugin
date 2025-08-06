@@ -20,6 +20,13 @@ class RosbridgeClient {
       error: null,
       close: null
     };
+    this.onConnectionCallback = null;
+    this.onReconnectionCallback = null;
+  }
+  
+  setConnectionCallbacks(onConnection, onReconnection) {
+    this.onConnectionCallback = onConnection;
+    this.onReconnectionCallback = onReconnection;
   }
 
   connect() {
@@ -37,24 +44,29 @@ class RosbridgeClient {
 
       // Store event handlers for cleanup
       this.eventHandlers.connection = () => {
-        vscode.window.showInformationMessage("Connected to ROS bridge");
+        vscode.window.showInformationMessage("Connected to ROS 2 bridge");
         this.reconnectAttempts = 0;
         this.reconnectDelay = 1000;
         this.isReconnecting = false;
+        
+        if (this.onConnectionCallback) {
+          this.onConnectionCallback();
+        }
+        
         resolve();
       };
 
       this.eventHandlers.error = (error) => {
-        vscode.window.showErrorMessage(`ROS bridge error: ${error}`);
+        vscode.window.showErrorMessage(`ROS 2 bridge error: ${error}`);
         reject(error);
       };
 
       this.eventHandlers.close = () => {
         if (this.shouldReconnect) {
-          vscode.window.showWarningMessage("Disconnected from ROS bridge. Attempting to reconnect...");
+          vscode.window.showWarningMessage("Disconnected from ROS 2 bridge. Attempting to reconnect...");
           this.handleReconnection();
         } else {
-          vscode.window.showWarningMessage("Disconnected from ROS bridge");
+          vscode.window.showWarningMessage("Disconnected from ROS 2 bridge");
         }
       };
 
@@ -73,7 +85,7 @@ class RosbridgeClient {
 
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       vscode.window.showErrorMessage(
-        `Failed to reconnect to ROS bridge after ${this.maxReconnectAttempts} attempts. Please check your rosbridge server.`
+        `Failed to reconnect to ROS 2 bridge after ${this.maxReconnectAttempts} attempts. Please check your rosbridge server.`
       );
       this.isReconnecting = false;
       return;
@@ -90,8 +102,12 @@ class RosbridgeClient {
       if (this.shouldReconnect) {
         this.connectionPromise = this.connect()
           .then(() => {
-            vscode.window.showInformationMessage("Successfully reconnected to ROS bridge");
+            vscode.window.showInformationMessage("Successfully reconnected to ROS 2 bridge");
             this.resubscribeTopics();
+            
+            if (this.onReconnectionCallback) {
+              this.onReconnectionCallback();
+            }
           })
           .catch(() => {
             this.handleReconnection();
@@ -102,13 +118,28 @@ class RosbridgeClient {
   }
 
   resubscribeTopics() {
-    this.subscriptions.forEach((callback, topicName) => {
-      const topic = this.topics.get(topicName);
-      if (topic) {
-        this.pChannel.appendLine(`Resubscribing to topic: ${topicName}`);
-        topic.ros = this.ros;
-        topic.subscribe(callback);
+    const topicsToResubscribe = [];
+    
+    this.topics.forEach((topic, topicName) => {
+      const callback = this.subscriptions.get(topicName);
+      if (callback) {
+        topicsToResubscribe.push({
+          name: topic.name,
+          messageType: topic.messageType,
+          callback: callback
+        });
+        
+        topic.unsubscribe(callback);
       }
+      topic.ros = null;
+    });
+    
+    this.topics.clear();
+    this.subscriptions.clear();
+    
+    topicsToResubscribe.forEach((topicInfo) => {
+      this.pChannel.appendLine(`Resubscribing to topic: ${topicInfo.name}`);
+      this.subscribeTopic(topicInfo.name, topicInfo.messageType, topicInfo.callback);
     });
   }
 

@@ -173,7 +173,7 @@ class BagRecorderPanel {
   _browseOutputPath() {
     vscode.window
       .showWarningMessage(
-        "The browse dialog shows your local filesystem. Please manually enter the remote path where you want to save the bag file on your ROS machine.",
+        "The browse dialog shows your local filesystem. Please manually enter the remote path where you want to save the bag file on your ROS 2 machine.",
         "OK"
       )
       .then(() => {
@@ -196,7 +196,7 @@ class BagRecorderPanel {
 
               vscode.window
                 .showInputBox({
-                  prompt: "Enter the path on your remote ROS machine",
+                  prompt: "Enter the path on your remote ROS 2 machine",
                   value: suggestedRemotePath,
                   placeHolder: "/home/ros/bags/my_recording",
                   validateInput: (value) => {

@@ -84,7 +84,7 @@ class VisualizationPanel {
 
       const panel = vscode.window.createWebviewPanel(
         VisualizationPanel.viewType,
-        `ROS Visualization: ${topicName}`,
+        `ROS 2 Visualization: ${topicName}`,
         column || vscode.ViewColumn.One,
         {
           enableScripts: true,
@@ -270,7 +270,7 @@ class VisualizationPanel {
     <html lang="en">
     <head>
       <meta charset="UTF-8">
-      <title>ROS Visualization: ${this._topicName}</title>
+      <title>ROS 2 Visualization: ${this._topicName}</title>
       <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
       <style>

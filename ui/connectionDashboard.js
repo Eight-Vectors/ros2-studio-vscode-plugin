@@ -14,7 +14,7 @@ class ConnectionDashboard {
     } else {
       const panel = vscode.window.createWebviewPanel(
         "rosConnectionDashboard",
-        "ROS Connection Dashboard",
+        "ROS 2 Connection Dashboard",
         column || vscode.ViewColumn.One,
         {
           enableScripts: true,
@@ -77,7 +77,7 @@ class ConnectionDashboard {
       });
     } catch (error) {
       // Show error to user as it's likely a rosbridge connection issue
-      vscode.window.showErrorMessage(`Failed to update ROS system info: ${error.message || error}`);
+      vscode.window.showErrorMessage(`Failed to update ROS 2 system info: ${error.message || error}`);
     }
   }
 
@@ -130,7 +130,7 @@ class ConnectionDashboard {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>ROS Connection Dashboard</title>
+        <title>ROS 2 Connection Dashboard</title>
         <style>
             body {
                 font-family: var(--vscode-font-family);
@@ -252,7 +252,7 @@ class ConnectionDashboard {
             <svg class="robot-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2C13.1 2 14 2.9 14 4V5H18C19.1 5 20 5.9 20 7V19C20 20.1 19.1 21 18 21H6C4.9 21 4 20.1 4 19V7C4 5.9 4.9 5 6 5H10V4C10 2.9 10.9 2 12 2M6 7V19H18V7H6M9 9.5C9.83 9.5 10.5 10.17 10.5 11C10.5 11.83 9.83 12.5 9 12.5C8.17 12.5 7.5 11.83 7.5 11C7.5 10.17 8.17 9.5 9 9.5M15 9.5C15.83 9.5 16.5 10.17 16.5 11C16.5 11.83 15.83 12.5 15 12.5C14.17 12.5 13.5 11.83 13.5 11C13.5 10.17 14.17 9.5 15 9.5M9 15H15V16.5C15 17.33 14.33 18 13.5 18H10.5C9.67 18 9 17.33 9 16.5V15Z" fill="currentColor"/>
             </svg>
-            <h1>ROS Connection Dashboard</h1>
+            <h1>ROS 2 Connection Dashboard</h1>
             <div class="status">
                 <div class="status-indicator" id="statusIndicator"></div>
                 <span id="statusText">Connecting...</span>

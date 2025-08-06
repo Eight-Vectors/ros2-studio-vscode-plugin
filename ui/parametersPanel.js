@@ -236,7 +236,7 @@ class ParametersPanel {
     // Fetch the value
     this._rosbridgeClient.getParameter(fullParamName, (value, error) => {
       if (error) {
-        vscode.window.showErrorMessage(`Parameter ${fullParamName} not found on ROS parameter server`);
+        vscode.window.showErrorMessage(`Parameter ${fullParamName} not found on ROS 2 parameter server`);
         // Remove from list if not found
         this._manualParameterNames = this._manualParameterNames.filter(p => p !== fullParamName);
         this._saveStoredParameters();
@@ -268,7 +268,7 @@ class ParametersPanel {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>ROS Parameters</title>
+        <title>ROS 2 Parameters</title>
         <style>
             body {
                 font-family: var(--vscode-font-family);
@@ -502,13 +502,23 @@ class ParametersPanel {
             .remove-button:hover {
                 background-color: var(--vscode-button-secondaryHoverBackground);
             }
+            
+            .controls {
+                display: flex;
+                gap: 10px;
+                margin-top: 10px;
+            }
+            
+            .controls .search-box {
+                flex: 1;
+            }
         </style>
     </head>
     <body>
         <div class="header">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
-                    <h1 class="title">ROS Parameters</h1>
+                    <h1 class="title">ROS 2 Parameters</h1>
                     <div class="subtitle" id="nodeInfo">Loading...</div>
                 </div>
                 <button class="refresh-button" onclick="refresh()" title="Refresh parameters (clears cache)" style="margin-top: 2px;">
@@ -741,14 +751,14 @@ class ParametersPanel {
             }
 
             function getParameterDescription(name) {
-                // Add descriptions for common ROS parameters
+                // Add descriptions for common ROS 2 parameters
                 const descriptions = {
                     'use_sim_time': 'Use simulation time instead of wall-clock time',
                     'frame_id': 'The TF frame ID for this node',
                     'bond_heartbeat_period': 'Period between heartbeat messages in seconds',
                     'autostart_node': 'Automatically start the node on launch',
                     'yaml_filename': 'Path to the YAML configuration file',
-                    'topic_name': 'Name of the ROS topic to publish/subscribe'
+                    'topic_name': 'Name of the ROS 2 topic to publish/subscribe'
                 };
                 
                 // Check exact match first
