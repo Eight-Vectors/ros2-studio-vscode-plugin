@@ -2,7 +2,7 @@
   "name": "vscode-ros-extension",
   "displayName": "ROS 2 Plugin",
   "description": "Connect to ROS 2 systems via rosbridge, visualize topics, call services, and interact with ROS 2 nodes directly from VS Code",
-  "version": "0.3.1",
+  "version": "0.3.3",
   "publisher": "eightvectors",
   "icon": "media/industrial-robot.png",
   "galleryBanner": {
@@ -65,6 +65,16 @@
       {
         "command": "vscode-ros-extension.connect-bridge",
         "title": "Connect to Remote"
+      },
+      {
+        "command": "vscode-ros-extension.force-reset",
+        "title": "Force Reset Connection",
+        "icon": "$(debug-restart)"
+      },
+      {
+        "command": "vscode-ros-extension.stop-retry",
+        "title": "Force Stop Connection",
+        "icon": "$(stop)"
       },
       {
         "command": "vscode-ros-extension.disconnect-bridge",
@@ -194,9 +204,21 @@
           "maximum": 10,
           "description": "Maximum memory (in MB) allowed for message buffer per topic before trimming old messages"
         },
+        "vscode-ros-extension.maxReconnectAttempts": {
+          "type": "number",
+          "default": 10,
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Maximum number of reconnection attempts before giving up (0 = infinite)"
+        },
         "vscode-ros-extension.staticTopics": {
           "type": "array",
-          "default": ["/robot_description", "/tf_static", "/map_metadata", "/map"],
+          "default": [
+            "/robot_description",
+            "/tf_static",
+            "/map_metadata",
+            "/map"
+          ],
           "description": "List of topic names that are considered static (publish once or rarely)",
           "items": {
             "type": "string"
@@ -204,7 +226,11 @@
         },
         "vscode-ros-extension.staticTopicPatterns": {
           "type": "array",
-          "default": [".*_static$", ".*_description$", ".*_metadata$"],
+          "default": [
+            ".*_static$",
+            ".*_description$",
+            ".*_metadata$"
+          ],
           "description": "Regular expression patterns to match static topic names",
           "items": {
             "type": "string"
@@ -212,7 +238,10 @@
         },
         "vscode-ros-extension.staticMessageTypes": {
           "type": "array",
-          "default": [".*Parameter.*", ".*Description.*"],
+          "default": [
+            ".*Parameter.*",
+            ".*Description.*"
+          ],
           "description": "Regular expression patterns to match static message types",
           "items": {
             "type": "string"
@@ -230,12 +259,19 @@
     "keybindings": [],
     "viewsWelcome": [
       {
-        "view": "extNodesView",
-        "contents": "[Connect](command:vscode-ros-extension.connect-bridge)"
+        "view": "extWelcomeView",
+        "contents": "Welcome to ROS 2 Plugin!\n\n[Connect](command:vscode-ros-extension.connect-bridge)",
+        "when": "!vscode-ros-extension.isConnecting && !vscode-ros-extension.isReconnecting"
       },
       {
-        "view": "extNodeListView",
-        "contents": "[Connect](command:vscode-ros-extension.connect-bridge)"
+        "view": "extWelcomeView",
+        "contents": "Welcome to ROS 2 Plugin!\n\nConnecting...\n\n[Force Stop](command:vscode-ros-extension.stop-retry)",
+        "when": "vscode-ros-extension.isConnecting"
+      },
+      {
+        "view": "extWelcomeView",
+        "contents": "Welcome to ROS 2 Plugin!\n\nReconnecting...\n\n[Force Stop](command:vscode-ros-extension.stop-retry)",
+        "when": "vscode-ros-extension.isReconnecting"
       }
     ],
     "viewsContainers": {
@@ -250,14 +286,22 @@
     "views": {
       "extContainerView": [
         {
+          "id": "extWelcomeView",
+          "name": "ROS 2 Plugin",
+          "icon": "media/industrial-robot.svg",
+          "when": "!vscode-ros-extension.isConnected"
+        },
+        {
           "id": "extNodesView",
           "name": "ROS 2 Topics",
-          "icon": "media/industrial-robot.svg"
+          "icon": "media/industrial-robot.svg",
+          "when": "vscode-ros-extension.isConnected"
         },
         {
           "id": "extNodeListView",
           "name": "ROS 2 Nodes",
-          "icon": "media/industrial-robot.svg"
+          "icon": "media/industrial-robot.svg",
+          "when": "vscode-ros-extension.isConnected"
         }
       ]
     },
@@ -269,19 +313,64 @@
           "group": "navigation@1"
         },
         {
-          "command": "vscode-ros-extension.refresh-connections",
+          "command": "vscode-ros-extension.force-reset",
           "when": "view == extNodesView && vscode-ros-extension.isConnected",
           "group": "navigation@2"
         },
         {
+          "command": "vscode-ros-extension.stop-retry",
+          "when": "view == extNodesView && (vscode-ros-extension.isReconnecting || vscode-ros-extension.isConnecting)",
+          "group": "navigation@3"
+        },
+        {
+          "command": "vscode-ros-extension.refresh-connections",
+          "when": "view == extNodesView && vscode-ros-extension.isConnected",
+          "group": "navigation@4"
+        },
+        {
           "command": "vscode-ros-extension.open-bag-recorder",
           "when": "view == extNodesView && vscode-ros-extension.isConnected",
-          "group": "navigation@3"
+          "group": "navigation@5"
         },
         {
           "command": "vscode-ros-extension.open-message-inspector",
           "when": "view == extNodesView && vscode-ros-extension.isConnected",
+          "group": "navigation@6"
+        },
+        {
+          "command": "vscode-ros-extension.stop-retry",
+          "when": "view == extWelcomeView && (vscode-ros-extension.isReconnecting || vscode-ros-extension.isConnecting)",
+          "group": "navigation@1"
+        },
+        {
+          "command": "vscode-ros-extension.disconnect-bridge",
+          "when": "view == extNodeListView && vscode-ros-extension.isConnected",
+          "group": "navigation@1"
+        },
+        {
+          "command": "vscode-ros-extension.force-reset",
+          "when": "view == extNodeListView && vscode-ros-extension.isConnected",
+          "group": "navigation@2"
+        },
+        {
+          "command": "vscode-ros-extension.stop-retry",
+          "when": "view == extNodeListView && (vscode-ros-extension.isReconnecting || vscode-ros-extension.isConnecting)",
+          "group": "navigation@3"
+        },
+        {
+          "command": "vscode-ros-extension.refresh-connections",
+          "when": "view == extNodeListView && vscode-ros-extension.isConnected",
           "group": "navigation@4"
+        },
+        {
+          "command": "vscode-ros-extension.open-bag-recorder",
+          "when": "view == extNodeListView && vscode-ros-extension.isConnected",
+          "group": "navigation@5"
+        },
+        {
+          "command": "vscode-ros-extension.open-message-inspector",
+          "when": "view == extNodeListView && vscode-ros-extension.isConnected",
+          "group": "navigation@6"
         }
       ],
       "view/item/context": [
@@ -330,6 +419,14 @@
         {
           "command": "vscode-ros-extension.get-parameters",
           "when": "view == extNodeListView && viewItem == node"
+        },
+        {
+          "command": "vscode-ros-extension.add-to-bag-recorder",
+          "when": "view == extNodeListView && viewItem == publisher"
+        },
+        {
+          "command": "vscode-ros-extension.add-to-bag-recorder",
+          "when": "view == extNodeListView && viewItem == subscribers"
         },
         {
           "command": "vscode-ros-extension.inspect-topic-message",

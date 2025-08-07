@@ -10,35 +10,61 @@ class RosbridgeClient {
     this.subscriptions = new Map();
     this.connectionPromise = this.connect();
     this.reconnectAttempts = 0;
-    this.maxReconnectAttempts = 10;
+    this.maxReconnectAttempts = this._getMaxReconnectAttempts();
     this.reconnectDelay = 1000; // Start with 1 second
     this.isReconnecting = false;
     this.shouldReconnect = true;
     this.reconnectTimeout = null;
+    this.isManuallyConnecting = false;
     this.eventHandlers = {
       connection: null,
       error: null,
-      close: null
+      close: null,
     };
     this.onConnectionCallback = null;
     this.onReconnectionCallback = null;
+    this.onConnectionStatusChange = null;
   }
-  
-  setConnectionCallbacks(onConnection, onReconnection) {
+
+  setConnectionCallbacks(onConnection, onReconnection, onStatusChange) {
     this.onConnectionCallback = onConnection;
     this.onReconnectionCallback = onReconnection;
+    this.onConnectionStatusChange = onStatusChange;
+  }
+
+  _getMaxReconnectAttempts() {
+    const config = vscode.workspace.getConfiguration("vscode-ros-extension");
+    const attempts = config.get("maxReconnectAttempts", 10);
+    return attempts === 0 ? Infinity : attempts;
+  }
+
+  updateMaxReconnectAttempts() {
+    this.maxReconnectAttempts = this._getMaxReconnectAttempts();
   }
 
   formatError(error) {
+    // Handle AggregateError specifically
+    if (error && error.name === "AggregateError" && error.errors) {
+      const errorMessages = error.errors.map((err) => {
+        if (err instanceof Error) {
+          return err.message;
+        } else if (typeof err === "object" && err !== null) {
+          return err.message || err.error || err.reason || JSON.stringify(err);
+        }
+        return String(err);
+      });
+      return `Errors occurred: ${errorMessages.join("; ")}`;
+    }
+
     if (error instanceof Error) {
       return error.message;
-    } else if (typeof error === 'object' && error !== null) {
+    } else if (typeof error === "object" && error !== null) {
       if (error.message) return error.message;
       if (error.error) return error.error;
       if (error.reason) return error.reason;
       if (error.code) return `Error code: ${error.code}`;
       return JSON.stringify(error);
-    } else if (typeof error === 'string') {
+    } else if (typeof error === "string") {
       return error;
     }
     return String(error);
@@ -47,6 +73,18 @@ class RosbridgeClient {
   connect() {
     if (this.ros && this.ros.isConnected) {
       return Promise.resolve();
+    }
+
+    // Prevent multiple simultaneous connections
+    if (this.isManuallyConnecting) {
+      return Promise.reject(new Error("Connection already in progress"));
+    }
+
+    this.isManuallyConnecting = true;
+
+    // Notify about connection attempt starting
+    if (this.onConnectionStatusChange) {
+      this.onConnectionStatusChange("connecting");
     }
 
     // Clean up old event handlers if they exist
@@ -63,30 +101,47 @@ class RosbridgeClient {
         this.reconnectAttempts = 0;
         this.reconnectDelay = 1000;
         this.isReconnecting = false;
-        
+        this.isManuallyConnecting = false;
+
+        // Notify about successful connection
+        if (this.onConnectionStatusChange) {
+          this.onConnectionStatusChange("connected");
+        }
+
         if (this.onConnectionCallback) {
           this.onConnectionCallback();
         }
-        
+
         resolve();
       };
 
       this.eventHandlers.error = (error) => {
         const errorMessage = this.formatError(error);
-        
+
         // Log error to output channel
-        this.pChannel.appendLine(`ROS 2 bridge connection error: ${errorMessage}`);
-        
+        this.pChannel.appendLine(
+          `ROS 2 bridge connection error: ${errorMessage}`
+        );
+
         // Auto-show the output channel on error
         this.pChannel.show(true);
-        
+
+        this.isManuallyConnecting = false;
+
+        // Notify about connection failure
+        if (this.onConnectionStatusChange) {
+          this.onConnectionStatusChange("disconnected");
+        }
+
         vscode.window.showErrorMessage(`ROS 2 bridge error: ${errorMessage}`);
         reject(error);
       };
 
       this.eventHandlers.close = () => {
         if (this.shouldReconnect) {
-          vscode.window.showWarningMessage("Disconnected from ROS 2 bridge. Attempting to reconnect...");
+          vscode.window.showWarningMessage(
+            "Disconnected from ROS 2 bridge. Attempting to reconnect..."
+          );
           this.handleReconnection();
         } else {
           vscode.window.showWarningMessage("Disconnected from ROS 2 bridge");
@@ -106,28 +161,57 @@ class RosbridgeClient {
 
     this.isReconnecting = true;
 
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+    // Notify about reconnection attempt
+    if (this.onConnectionStatusChange) {
+      this.onConnectionStatusChange("reconnecting");
+    }
+
+    // Update context for UI
+    vscode.commands.executeCommand(
+      "setContext",
+      "vscode-ros-extension.isReconnecting",
+      true
+    );
+
+    if (
+      this.maxReconnectAttempts !== Infinity &&
+      this.reconnectAttempts >= this.maxReconnectAttempts
+    ) {
       vscode.window.showErrorMessage(
         `Failed to reconnect to ROS 2 bridge after ${this.maxReconnectAttempts} attempts. Please check your rosbridge server.`
       );
       this.isReconnecting = false;
+      vscode.commands.executeCommand(
+        "setContext",
+        "vscode-ros-extension.isReconnecting",
+        false
+      );
       return;
     }
 
     this.reconnectAttempts++;
-    const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 30000);
+    const delay = Math.min(
+      this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1),
+      30000
+    );
 
+    const maxAttemptsStr =
+      this.maxReconnectAttempts === Infinity ? "∞" : this.maxReconnectAttempts;
     this.pChannel.appendLine(
-      `Reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay / 1000} seconds...`
+      `Reconnection attempt ${this.reconnectAttempts}/${maxAttemptsStr} in ${
+        delay / 1000
+      } seconds...`
     );
 
     this.reconnectTimeout = setTimeout(() => {
       if (this.shouldReconnect) {
         this.connectionPromise = this.connect()
           .then(() => {
-            vscode.window.showInformationMessage("Successfully reconnected to ROS 2 bridge");
+            vscode.window.showInformationMessage(
+              "Successfully reconnected to ROS 2 bridge"
+            );
             this.resubscribeTopics();
-            
+
             if (this.onReconnectionCallback) {
               this.onReconnectionCallback();
             }
@@ -135,34 +219,44 @@ class RosbridgeClient {
           .catch(() => {
             this.handleReconnection();
           });
+      } else {
+        this.isReconnecting = false;
+        vscode.commands.executeCommand(
+          "setContext",
+          "vscode-ros-extension.isReconnecting",
+          false
+        );
       }
-      this.isReconnecting = false;
     }, delay);
   }
 
   resubscribeTopics() {
     const topicsToResubscribe = [];
-    
+
     this.topics.forEach((topic, topicName) => {
       const callback = this.subscriptions.get(topicName);
       if (callback) {
         topicsToResubscribe.push({
           name: topic.name,
           messageType: topic.messageType,
-          callback: callback
+          callback: callback,
         });
-        
+
         topic.unsubscribe(callback);
       }
       topic.ros = null;
     });
-    
+
     this.topics.clear();
     this.subscriptions.clear();
-    
+
     topicsToResubscribe.forEach((topicInfo) => {
       this.pChannel.appendLine(`Resubscribing to topic: ${topicInfo.name}`);
-      this.subscribeTopic(topicInfo.name, topicInfo.messageType, topicInfo.callback);
+      this.subscribeTopic(
+        topicInfo.name,
+        topicInfo.messageType,
+        topicInfo.callback
+      );
     });
   }
 
@@ -190,7 +284,7 @@ class RosbridgeClient {
       messageType: messageType,
       throttle_rate: 500, // Throttle to max 2 messages per second for better performance
       queue_size: 1, // Only keep latest message
-      compression: 'none'
+      compression: "none",
     });
 
     topic.subscribe(callback);
@@ -429,7 +523,6 @@ class RosbridgeClient {
   }
 
   _extractROS2ParamValue(paramValue) {
-
     const type = paramValue.type;
 
     switch (type) {
@@ -832,7 +925,7 @@ class RosbridgeClient {
 
   _parseMessageDefinition(typedefs) {
     const parsed = {};
-    
+
     typedefs.forEach((typedef) => {
       const type = typedef.type;
       const fieldList = typedef.fieldnames || [];
@@ -840,54 +933,57 @@ class RosbridgeClient {
       const examples = typedef.examples || [];
       const constnames = typedef.constnames || [];
       const constvalues = typedef.constvalues || [];
-      
-      
+
       const fieldarraylen = typedef.fieldarraylen || [];
-      
+
       const fields = [];
       for (let i = 0; i < fieldList.length; i++) {
-        if (fieldList[i] === 'SLOT_TYPES' || fieldList[i] === '_slot_types' || fieldList[i].startsWith('_')) {
+        if (
+          fieldList[i] === "SLOT_TYPES" ||
+          fieldList[i] === "_slot_types" ||
+          fieldList[i].startsWith("_")
+        ) {
           continue;
         }
-        
+
         let fieldType = fieldTypes[i];
         const arrayLen = fieldarraylen[i];
-        
+
         if (arrayLen === 0) {
-          fieldType = fieldType + '[]';
+          fieldType = fieldType + "[]";
         } else if (arrayLen > 0) {
           fieldType = fieldType + `[${arrayLen}]`;
         }
-        
+
         fields.push({
           name: fieldList[i],
           type: fieldType,
           example: examples[i] || null,
         });
       }
-      
+
       const constants = [];
       for (let i = 0; i < constnames.length; i++) {
-        if (constnames[i] === 'SLOT_TYPES' || constnames[i].startsWith('_')) {
+        if (constnames[i] === "SLOT_TYPES" || constnames[i].startsWith("_")) {
           continue;
         }
-        
+
         if (fieldList.includes(constnames[i])) {
           continue;
         }
-        
+
         constants.push({
           name: constnames[i],
           value: constvalues[i],
         });
       }
-      
+
       parsed[type] = {
         fields: fields,
         constants: constants,
       };
     });
-    
+
     return parsed;
   }
 
@@ -906,19 +1002,81 @@ class RosbridgeClient {
     this.eventHandlers = {
       connection: null,
       error: null,
-      close: null
+      close: null,
     };
   }
 
-  disconnect() {
+  stopReconnection() {
     this.shouldReconnect = false;
-    
+    this.isReconnecting = false;
+    this.isManuallyConnecting = false; // Reset this flag too
+
+    // Notify about stopping reconnection
+    if (this.onConnectionStatusChange) {
+      this.onConnectionStatusChange("disconnected");
+    }
+
     // Clear any pending reconnection timeout
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
     }
-    
+
+    // Close the current connection if it exists
+    if (this.ros) {
+      this.cleanupEventHandlers();
+      this.ros.close();
+      this.ros = null;
+    }
+
+    vscode.commands.executeCommand(
+      "setContext",
+      "vscode-ros-extension.isReconnecting",
+      false
+    );
+
+    this.pChannel.appendLine("Stopped reconnection attempts");
+    vscode.window.showInformationMessage("Stopped reconnection attempts");
+  }
+
+  forceReset() {
+    this.pChannel.appendLine("Force resetting connection...");
+
+    // First disconnect completely
+    this.disconnect();
+
+    // Reset connection state
+    this.reconnectAttempts = 0;
+    this.reconnectDelay = 1000;
+    this.shouldReconnect = true;
+    this.isManuallyConnecting = false;
+
+    // Reconnect
+    return this.connect();
+  }
+
+  disconnect() {
+    this.shouldReconnect = false;
+    this.isManuallyConnecting = false;
+
+    // Clear any pending reconnection timeout
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+
+    // Notify about disconnection
+    if (this.onConnectionStatusChange) {
+      this.onConnectionStatusChange("disconnected");
+    }
+
+    // Update context
+    vscode.commands.executeCommand(
+      "setContext",
+      "vscode-ros-extension.isReconnecting",
+      false
+    );
+
     if (this.ros) {
       // Unsubscribe and clean up all topics
       this.topics.forEach((topic, topicName) => {
