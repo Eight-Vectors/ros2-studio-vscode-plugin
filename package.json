@@ -1,10 +1,10 @@
 {
   "name": "vscode-ros-extension",
-  "displayName": "ROS 2 Plugin",
+  "displayName": "ROS 2 Studio",
   "description": "Connect to ROS 2 systems via rosbridge, visualize topics, call services, and interact with ROS 2 nodes directly from VS Code",
   "version": "0.3.3",
   "publisher": "eightvectors",
-  "icon": "media/industrial-robot.png",
+  "icon": "media/ros2-studio-logo.png",
   "galleryBanner": {
     "color": "#1e2327",
     "theme": "dark"
@@ -260,17 +260,17 @@
     "viewsWelcome": [
       {
         "view": "extWelcomeView",
-        "contents": "Welcome to ROS 2 Plugin!\n\n[Connect](command:vscode-ros-extension.connect-bridge)",
+        "contents": "Welcome to ROS 2 Studio!\n\n[Connect](command:vscode-ros-extension.connect-bridge)",
         "when": "!vscode-ros-extension.isConnecting && !vscode-ros-extension.isReconnecting"
       },
       {
         "view": "extWelcomeView",
-        "contents": "Welcome to ROS 2 Plugin!\n\nConnecting...\n\n[Force Stop](command:vscode-ros-extension.stop-retry)",
+        "contents": "Welcome to ROS 2 Studio!\n\nConnecting...\n\n[Force Stop](command:vscode-ros-extension.stop-retry)",
         "when": "vscode-ros-extension.isConnecting"
       },
       {
         "view": "extWelcomeView",
-        "contents": "Welcome to ROS 2 Plugin!\n\nReconnecting...\n\n[Force Stop](command:vscode-ros-extension.stop-retry)",
+        "contents": "Welcome to ROS 2 Studio!\n\nReconnecting...\n\n[Force Stop](command:vscode-ros-extension.stop-retry)",
         "when": "vscode-ros-extension.isReconnecting"
       }
     ],
@@ -278,8 +278,8 @@
       "activitybar": [
         {
           "id": "extContainerView",
-          "title": "ROS 2 Plugin",
-          "icon": "media/industrial-robot.svg"
+          "title": "ROS 2 Studio",
+          "icon": "media/ros2-studio-logo.svg"
         }
       ]
     },
@@ -287,20 +287,20 @@
       "extContainerView": [
         {
           "id": "extWelcomeView",
-          "name": "ROS 2 Plugin",
-          "icon": "media/industrial-robot.svg",
+          "name": "ROS 2 Studio",
+          "icon": "media/ros2-studio-logo.svg",
           "when": "!vscode-ros-extension.isConnected"
         },
         {
           "id": "extNodesView",
           "name": "ROS 2 Topics",
-          "icon": "media/industrial-robot.svg",
+          "icon": "media/ros2-studio-logo.svg",
           "when": "vscode-ros-extension.isConnected"
         },
         {
           "id": "extNodeListView",
           "name": "ROS 2 Nodes",
-          "icon": "media/industrial-robot.svg",
+          "icon": "media/ros2-studio-logo.svg",
           "when": "vscode-ros-extension.isConnected"
         }
       ]
