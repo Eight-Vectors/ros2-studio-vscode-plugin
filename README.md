@@ -1,4 +1,4 @@
-# ROS 2 Bridge Extension for Visual Studio Code
+# ROS 2 Studio
 
 [![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/eightvectors.vscode-ros-extension)](https://marketplace.visualstudio.com/items?itemName=eightvectors.vscode-ros-extension)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -46,7 +46,7 @@ Connect to ROS 2 systems via rosbridge WebSocket protocol directly from VS Code.
 
 1. Open VS Code
 2. Go to Extensions (Ctrl+Shift+X)
-3. Search for "ROS 2 Bridge Extension"
+3. Search for "ROS 2 Studio"
 4. Click Install
 
 ## ⚙️ Configuration
@@ -87,7 +87,7 @@ Connect to ROS 2 systems via rosbridge WebSocket protocol directly from VS Code.
    - Click "Connect" or use Command Palette: `Connect to Remote`
    - Default connection is `ws://localhost:9090`
 
-   ![Connect to ROS 2 Bridge](https://raw.githubusercontent.com/Eight-Vectors/-vscode-ros-extension-assets/main/gifs/connect-rosbridge.gif)
+   ![Connect to ROS 2 Studio](https://raw.githubusercontent.com/Eight-Vectors/-vscode-ros-extension-assets/main/gifs/connect-rosbridge.gif)
 
 3. **Browse ROS 2 entities**:
 
