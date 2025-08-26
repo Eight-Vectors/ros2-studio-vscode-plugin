@@ -279,7 +279,7 @@
         {
           "id": "ros2StudioContainerView",
           "title": "ROS 2 Studio",
-          "icon": "media/ros2-studio-logo.svg"
+          "icon": "media/ros2-studio-logo.png"
         }
       ]
     },
@@ -288,19 +288,19 @@
         {
           "id": "ros2StudioWelcomeView",
           "name": "ROS 2 Studio",
-          "icon": "media/ros2-studio-logo.svg",
+          "icon": "media/ros2-studio-logo.png",
           "when": "!ros2-studio.isConnected"
         },
         {
           "id": "ros2StudioTopicsView",
           "name": "ROS 2 Topics",
-          "icon": "media/ros2-studio-logo.svg",
+          "icon": "media/ros2-studio-logo.png",
           "when": "ros2-studio.isConnected"
         },
         {
           "id": "ros2StudioNodeListView",
           "name": "ROS 2 Nodes",
-          "icon": "media/ros2-studio-logo.svg",
+          "icon": "media/ros2-studio-logo.png",
           "when": "ros2-studio.isConnected"
         }
       ]

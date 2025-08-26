@@ -270,16 +270,16 @@ function activate(context) {
       extensionHandle,
       channels["main"]
     );
-    vscode.window.registerTreeDataProvider("extNodesView", tree);
+    vscode.window.registerTreeDataProvider("ros2StudioTopicsView", tree);
 
     let nodeTree = new NodeListProvider(
       bridge,
       extensionHandle,
       channels["main"]
     );
-    vscode.window.registerTreeDataProvider("extNodeListView", nodeTree);
+    vscode.window.registerTreeDataProvider("ros2StudioNodeListView", nodeTree);
 
-    vscode.window.registerTreeDataProvider("extWelcomeView", {
+    vscode.window.registerTreeDataProvider("ros2StudioWelcomeView", {
       getTreeItem: () => null,
       getChildren: () => [],
     });
