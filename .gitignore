@@ -9,3 +9,5 @@ ui/visualizationPanelbk.js
 remote_scripts/
 setup/
 docs/
+scripts/
+test/
