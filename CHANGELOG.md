@@ -1,6 +1,6 @@
 # Change Log
 
-All notable changes to the "vscode-ros-extension" will be documented in this file.
+All notable changes to the "ROS 2 Studio" will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](https://semver.org/).
 
@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ### Added
 
-- Initial release of ROS 2 Bridge Extension
+- Initial release of ROS 2 Studio Extension
 - ROS 2 entity discovery (nodes, topics, services, publishers, subscribers)
 - Topic subscription/unsubscription with real-time message display
 - Advanced visualization support:
