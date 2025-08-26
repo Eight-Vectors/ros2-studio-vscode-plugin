@@ -50,12 +50,7 @@ function validateAndFormatEndpoint(url, port, protocol) {
       protocol = protocolRegex.exec(input)[0];
     }
 
-    // if (!protocolRegex.test(input) && protocol) {
-    //   input = `${protocol}://` + input;
-    // } else {
 
-    //   protocol = protocolRegex.exec(input)[0];
-    // }
     try {
       const parsedUrl = new URL(input);
       return parsedUrl.hostname;
@@ -115,7 +110,7 @@ function generateTimestamp() {
   return `${year}_${month}_${day}_${hours}_${minutes}_${seconds}`;
 }
 
-const extensionHandle = "vscode-ros-extension";
+const extensionHandle = "ros2-studio";
 
 module.exports = {
   validateAndFormatEndpoint,

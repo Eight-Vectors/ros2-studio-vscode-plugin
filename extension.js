@@ -27,7 +27,6 @@ try {
 }
 
 function formatError(error) {
-  // Handle AggregateError specifically
   if (error && error.name === "AggregateError" && error.errors) {
     const errorMessages = error.errors.map((err) => {
       if (err instanceof Error) {
@@ -82,7 +81,7 @@ function updateTopicMessageRate(topicName, topicRates) {
 }
 
 function isStaticTopic(topicName, messageType, topicRates) {
-  const config = vscode.workspace.getConfiguration("vscode-ros-extension");
+  const config = vscode.workspace.getConfiguration("ros2-studio");
 
   const staticTopics = config.get("staticTopics", [
     "/robot_description",
@@ -240,15 +239,14 @@ function handleGenericServiceResult(serviceName, result, channels) {
 
 function activate(context) {
   try {
-    // Set initial connection state
     vscode.commands.executeCommand(
       "setContext",
-      "vscode-ros-extension.isConnected",
+      "ros2-studio.isConnected",
       false
     );
     vscode.commands.executeCommand(
       "setContext",
-      "vscode-ros-extension.isConnecting",
+      "ros2-studio.isConnecting",
       false
     );
 
@@ -256,25 +254,17 @@ function activate(context) {
     let channels = {};
     let ws = null;
 
-    // Create a Map to track all output channels for proper cleanup
     const outputChannels = new Map();
-
-    // Track topic message rates for auto-detection
     const topicMessageRates = new Map();
 
-    // Create main output channel for extension logs
     channels["main"] = vscode.window.createOutputChannel(
       "ROS 2 Bridge Extension"
     );
     outputChannels.set("main", channels["main"]);
 
-    // Periodic cleanup interval
     let cleanupInterval = null;
-
-    // Track active connections to prevent duplicates
     let activeConnections = new Set();
 
-    // Create and register tree view providers
     let tree = new PublishersProvider(
       bridge,
       extensionHandle,
@@ -282,7 +272,6 @@ function activate(context) {
     );
     vscode.window.registerTreeDataProvider("extNodesView", tree);
 
-    // Create and register node list provider
     let nodeTree = new NodeListProvider(
       bridge,
       extensionHandle,
@@ -290,13 +279,11 @@ function activate(context) {
     );
     vscode.window.registerTreeDataProvider("extNodeListView", nodeTree);
 
-    // Register empty welcome view provider
     vscode.window.registerTreeDataProvider("extWelcomeView", {
       getTreeItem: () => null,
       getChildren: () => [],
     });
 
-    // Listen for configuration changes
     context.subscriptions.push(
       vscode.workspace.onDidChangeConfiguration((e) => {
         if (
@@ -334,7 +321,6 @@ function activate(context) {
             }
           }
 
-          // Check if we're already trying to connect to this URL
           if (ws && ws.isManuallyConnecting) {
             vscode.window.showWarningMessage(
               "Connection already in progress. Please wait..."
@@ -363,34 +349,32 @@ function activate(context) {
             },
           });
 
-          if (customUrl) {
-            // Check if we're already connected to this URL
-            if (activeConnections.has(customUrl)) {
-              vscode.window.showWarningMessage(
-                `Already connected or connecting to ${customUrl}`
+                      if (customUrl) {
+              if (activeConnections.has(customUrl)) {
+                vscode.window.showWarningMessage(
+                  `Already connected or connecting to ${customUrl}`
+                );
+                return;
+              }
+
+              vscode.window.showInformationMessage(
+                `Connecting to rosbridge at ${customUrl}...`
               );
-              return;
-            }
+              activeConnections.add(customUrl);
 
-            vscode.window.showInformationMessage(
-              `Connecting to rosbridge at ${customUrl}...`
-            );
-            activeConnections.add(customUrl);
-
-            // Set connecting state immediately
+              vscode.commands.executeCommand(
+                "setContext",
+                "ros2-studio.isConnecting",
+                true
+              );
             vscode.commands.executeCommand(
               "setContext",
-              "vscode-ros-extension.isConnecting",
-              true
-            );
-            vscode.commands.executeCommand(
-              "setContext",
-              "vscode-ros-extension.isConnected",
+              "ros2-studio.isConnected",
               false
             );
             vscode.commands.executeCommand(
               "setContext",
-              "vscode-ros-extension.isReconnecting",
+              "ros2-studio.isReconnecting",
               false
             );
 
@@ -409,73 +393,72 @@ function activate(context) {
                 nodeTree.refresh();
               },
               (status) => {
-                // Handle connection status changes
                 switch (status) {
                   case "connecting":
                     vscode.commands.executeCommand(
                       "setContext",
-                      "vscode-ros-extension.isConnecting",
+                      "ros2-studio.isConnecting",
                       true
                     );
                     vscode.commands.executeCommand(
                       "setContext",
-                      "vscode-ros-extension.isConnected",
+                      "ros2-studio.isConnected",
                       false
                     );
                     vscode.commands.executeCommand(
                       "setContext",
-                      "vscode-ros-extension.isReconnecting",
+                      "ros2-studio.isReconnecting",
                       false
                     );
                     break;
                   case "connected":
                     vscode.commands.executeCommand(
                       "setContext",
-                      "vscode-ros-extension.isConnecting",
+                      "ros2-studio.isConnecting",
                       false
                     );
                     vscode.commands.executeCommand(
                       "setContext",
-                      "vscode-ros-extension.isConnected",
+                      "ros2-studio.isConnected",
                       true
                     );
                     vscode.commands.executeCommand(
                       "setContext",
-                      "vscode-ros-extension.isReconnecting",
+                      "ros2-studio.isReconnecting",
                       false
                     );
                     break;
                   case "reconnecting":
                     vscode.commands.executeCommand(
                       "setContext",
-                      "vscode-ros-extension.isConnecting",
+                      "ros2-studio.isConnecting",
                       false
                     );
                     vscode.commands.executeCommand(
                       "setContext",
-                      "vscode-ros-extension.isConnected",
+                      "ros2-studio.isConnected",
                       false
                     );
                     vscode.commands.executeCommand(
                       "setContext",
-                      "vscode-ros-extension.isReconnecting",
+                      "ros2-studio.isReconnecting",
                       true
                     );
                     break;
                   case "disconnected":
                     vscode.commands.executeCommand(
                       "setContext",
-                      "vscode-ros-extension.isConnecting",
+                      "ros2-studio.isConnecting",
                       false
                     );
                     vscode.commands.executeCommand(
                       "setContext",
-                      "vscode-ros-extension.isConnected",
+                      "ros2-studio.isConnected",
                       false
                     );
                     vscode.commands.executeCommand(
                       "setContext",
-                      "vscode-ros-extension.isReconnecting",
+                      "ros2-studio.isReconnecting",
                       false
                     );
                     break;
@@ -487,27 +470,23 @@ function activate(context) {
               .then(() => {
                 vscode.commands.executeCommand(
                   "setContext",
-                  "vscode-ros-extension.isConnected",
+                  "ros2-studio.isConnected",
                   true
                 );
                 tree.refresh();
                 nodeTree.refresh();
                 ConnectionDashboard.createOrShow(context.extensionUri, ws);
 
-                // Clean up memory periodically
                 cleanupInterval = setInterval(() => {
-                  // Force garbage collection
                   if (global.gc) {
                     global.gc();
                   }
 
                   for (const [name, channel] of outputChannels.entries()) {
                     if (name !== "main" && channel.subscriptionData) {
-                      // Don't clear static topics
                       if (channel.subscriptionData.isStatic) {
                         continue;
                       }
-                      // Keep memory usage under control
                       const config =
                         vscode.workspace.getConfiguration(extensionHandle);
                       const maxMessagesToRetain = config.get(
@@ -516,12 +495,10 @@ function activate(context) {
                       );
                       const maxMemoryMB = config.get("maxMemoryMB", 1);
 
-                      // Check topics with message buffer
                       if (
                         channel.subscriptionData.messageBuffer &&
                         channel.subscriptionData.messageBuffer.length > 0
                       ) {
-                        // Keep only last N messages
                         if (
                           channel.subscriptionData.messageBuffer.length >
                           maxMessagesToRetain
@@ -531,7 +508,6 @@ function activate(context) {
                               -maxMessagesToRetain
                             );
 
-                          // Refresh the output
                           channel.clear();
                           channel.appendLine(
                             `Topic: ${channel.subscriptionData.topicName} (Retaining last ${maxMessagesToRetain} messages)`
@@ -555,13 +531,11 @@ function activate(context) {
                           );
                         }
 
-                        // Check if using too much memory
                         try {
                           const estimatedSize = JSON.stringify(
                             channel.subscriptionData.messageBuffer
                           ).length;
                           if (estimatedSize > maxMemoryMB * 1024 * 1024) {
-                            // Cut it in half
                             const halfLength = Math.max(
                               1,
                               Math.floor(
@@ -581,11 +555,9 @@ function activate(context) {
                             channel.appendLine("");
                           }
                         } catch (e) {
-                          // Skip errors
                         }
                       }
 
-                      // Handle line count limits
                       if (
                         channel.subscriptionData.outputLineCount >
                         channel.subscriptionData.maxOutputLines
@@ -602,36 +574,31 @@ function activate(context) {
               .catch((error) => {
                 const errorMessage = formatError(error);
 
-                // Remove from active connections on failure
                 activeConnections.delete(customUrl);
 
-                // Reset connection states on failure
                 vscode.commands.executeCommand(
                   "setContext",
-                  "vscode-ros-extension.isConnecting",
+                  "ros2-studio.isConnecting",
                   false
                 );
                 vscode.commands.executeCommand(
                   "setContext",
-                  "vscode-ros-extension.isConnected",
+                  "ros2-studio.isConnected",
                   false
                 );
                 vscode.commands.executeCommand(
                   "setContext",
-                  "vscode-ros-extension.isReconnecting",
+                  "ros2-studio.isReconnecting",
                   false
                 );
 
-                // Log error to output channel
                 channels["main"].appendLine(
                   `Failed to connect to rosbridge at ${customUrl}`
                 );
                 channels["main"].appendLine(`Error: ${errorMessage}`);
 
-                // Auto-show the output channel on error
                 channels["main"].show(true);
 
-                // Show user-friendly error message
                 vscode.window.showErrorMessage(
                   `Failed to connect to rosbridge: ${errorMessage}`
                 );
@@ -653,7 +620,6 @@ function activate(context) {
 
           const disconnectedUrl = ws.url;
 
-          // Remove from active connections
           activeConnections.delete(disconnectedUrl);
 
           if (ws.topics) {
@@ -668,7 +634,6 @@ function activate(context) {
             }
           }
 
-          // Close all output channels except main
           const channelsToDispose = [];
           for (const [name, channel] of outputChannels.entries()) {
             if (name !== "main") {
@@ -677,16 +642,13 @@ function activate(context) {
           }
 
           for (const [name, channel] of channelsToDispose) {
-            // Extract topic name from channel name if it's a topic channel
             if (name.startsWith("ROS Topic: ")) {
               const topicName = name.substring("ROS Topic: ".length);
-              // Update tree state to show topic as unsubscribed
               tree.setTopicSubscriptionState(topicName, false);
             }
 
             channel.clear();
             channel.hide();
-            // Actually dispose on disconnect
             channel.dispose();
             outputChannels.delete(name);
             if (channels[name]) {
@@ -697,10 +659,8 @@ function activate(context) {
           ws.disconnect();
           ws = null;
 
-          // Clear topic message rates
           topicMessageRates.clear();
 
-          // Clear cleanup interval
           if (cleanupInterval) {
             clearInterval(cleanupInterval);
             cleanupInterval = null;
@@ -718,12 +678,10 @@ function activate(context) {
             ConnectionDashboard.currentPanel.dispose();
           }
 
-          // Dispose ParametersPanel instances
           if (ParametersPanel && ParametersPanel.disposeAll) {
             ParametersPanel.disposeAll();
           }
 
-          // Dispose BagRecorderPanel
           if (BagRecorderPanel.currentPanel) {
             BagRecorderPanel.currentPanel.dispose();
           }
@@ -735,17 +693,17 @@ function activate(context) {
 
           vscode.commands.executeCommand(
             "setContext",
-            "vscode-ros-extension.isConnected",
+            "ros2-studio.isConnected",
             false
           );
           vscode.commands.executeCommand(
             "setContext",
-            "vscode-ros-extension.isConnecting",
+            "ros2-studio.isConnecting",
             false
           );
           vscode.commands.executeCommand(
             "setContext",
-            "vscode-ros-extension.isReconnecting",
+            "ros2-studio.isReconnecting",
             false
           );
         }
@@ -763,19 +721,14 @@ function activate(context) {
             `Force resetting - cleaning up all connections...`
           );
 
-          // Remove from active connections
           activeConnections.delete(currentUrl);
 
-          // Stop any reconnection attempts
           ws.stopReconnection();
 
-          // Disconnect
           ws.disconnect();
 
-          // Clean up all subscriptions
           if (outputChannels) {
             for (const [topicName, channel] of outputChannels) {
-              // Skip the main channel - we want to keep it
               if (topicName === "main") {
                 channel.clear();
                 channel.appendLine(
@@ -794,7 +747,6 @@ function activate(context) {
               channel.dispose();
             }
 
-            // Clear all except main channel
             const mainChannel = outputChannels.get("main");
             outputChannels.clear();
             if (mainChannel) {
@@ -803,41 +755,35 @@ function activate(context) {
             }
           }
 
-          // Clear the cleanup interval if it exists
           if (cleanupInterval) {
             clearInterval(cleanupInterval);
             cleanupInterval = null;
           }
 
-          // Reset all context states
           vscode.commands.executeCommand(
             "setContext",
-            "vscode-ros-extension.isConnecting",
+            "ros2-studio.isConnecting",
             false
           );
           vscode.commands.executeCommand(
             "setContext",
-            "vscode-ros-extension.isConnected",
+            "ros2-studio.isConnected",
             false
           );
           vscode.commands.executeCommand(
             "setContext",
-            "vscode-ros-extension.isReconnecting",
+            "ros2-studio.isReconnecting",
             false
           );
 
-          // Clear the websocket reference
           ws = null;
 
-          // Clear the rosbridge clients from trees
           tree.setRosbridgeClient(null);
           nodeTree.setRosbridgeClient(null);
 
-          // Refresh trees to show empty state
           tree.refresh();
           nodeTree.refresh();
 
-          // Close any open panels
           if (ConnectionDashboard.currentPanel) {
             ConnectionDashboard.currentPanel.dispose();
           }
@@ -871,39 +817,33 @@ function activate(context) {
             return;
           }
 
-          // Get the current URL before cleaning up
           const currentUrl = ws.url;
 
-          // Remove from active connections to allow new connection attempts
           if (currentUrl) {
             activeConnections.delete(currentUrl);
           }
 
-          // Stop reconnection or initial connection
           ws.stopReconnection();
 
-          // If in connecting state, also disconnect
           if (ws.isManuallyConnecting || ws.isReconnecting) {
             ws.disconnect();
           }
 
-          // Clear the websocket reference
           ws = null;
 
-          // Reset all connection states
           vscode.commands.executeCommand(
             "setContext",
-            "vscode-ros-extension.isConnecting",
+            "ros2-studio.isConnecting",
             false
           );
           vscode.commands.executeCommand(
             "setContext",
-            "vscode-ros-extension.isReconnecting",
+            "ros2-studio.isReconnecting",
             false
           );
           vscode.commands.executeCommand(
             "setContext",
-            "vscode-ros-extension.isConnected",
+            "ros2-studio.isConnected",
             false
           );
 
@@ -932,13 +872,10 @@ function activate(context) {
 
           if (typeof treeItem === "string") {
             channelName = treeItem;
-            // Handle subscriber topics
             if (treeItem.includes("_sub_")) {
-              // Get the topic name
               const parts = treeItem.split("_sub_");
               topicName = parts[1];
             } else {
-              // Extract topic name, removing node name prefix
               const parts = treeItem.split("/");
               topicName = "/" + parts.slice(2).join("/");
             }
@@ -949,7 +886,6 @@ function activate(context) {
               : "/" + treeItem.label;
             channelName = `${nodeName}${topicLabel}`;
             topicName = topicLabel;
-            // Use the messageType from the treeItem or the passed messageType parameter
             messageType = treeItem.messageType || messageType;
           } else {
             vscode.window.showErrorMessage("Invalid subscription target");
@@ -994,7 +930,7 @@ function activate(context) {
               topicName: topicName,
               messageType: topicMessageType,
               messageBuffer: [],
-              maxBufferSize: Math.min(maxBufferSize, maxMessagesToRetain), // Use retention limit
+              maxBufferSize: Math.min(maxBufferSize, maxMessagesToRetain),
               lastMessageTime: 0,
               messageThrottle: messageThrottle,
               isStatic: isStaticTopic(
@@ -1012,7 +948,6 @@ function activate(context) {
 
                 updateTopicMessageRate(topicName, topicMessageRates);
 
-                // Skip if too soon
                 if (
                   now - subscriptionData.lastMessageTime <
                   subscriptionData.messageThrottle
@@ -1023,13 +958,11 @@ function activate(context) {
 
                 const timestamp = new Date().toISOString();
 
-                // Add to buffer
                 subscriptionData.messageBuffer.push({
                   timestamp,
                   message: msg,
                 });
 
-                // Remove old messages if buffer is full
                 if (
                   subscriptionData.messageBuffer.length >
                   subscriptionData.maxBufferSize
@@ -1037,14 +970,12 @@ function activate(context) {
                   subscriptionData.messageBuffer.shift();
                 }
 
-                // Update output
                 channels[channelName].clear();
                 channels[channelName].appendLine(
                   `Topic: ${topicName} (Retaining ${subscriptionData.messageBuffer.length} messages)`
                 );
                 channels[channelName].appendLine("");
 
-                // Show all messages
                 const messagesToShow = subscriptionData.messageBuffer;
                 messagesToShow.forEach((entry) => {
                   channels[channelName].appendLine(
@@ -1125,14 +1056,12 @@ function activate(context) {
               subscription.subscriptionData = null;
             }
 
-            // Clean up output channel for non-visualizable topics
             if (channels[channelName]) {
               channels[channelName].clear();
               channels[channelName].appendLine(
                 `[Unsubscribed from ${topicName}]`
               );
               channels[channelName].hide();
-              // Dispose the channel to fully clean up
               channels[channelName].dispose();
               delete channels[channelName];
               outputChannels.delete(channelName);
@@ -1143,7 +1072,6 @@ function activate(context) {
             channels[channelName].show();
           }
 
-          // Refresh tree to update button state
           tree.refresh();
         }
       ),
@@ -1232,12 +1160,10 @@ function activate(context) {
             : "/" + treeItem.label;
           const messageType = treeItem.messageType || "unknown";
 
-          // Create panel if it doesn't exist
           if (!BagRecorderPanel.currentPanel) {
             BagRecorderPanel.createOrShow(context.extensionUri);
           }
 
-          // Add topic to the recorder
           BagRecorderPanel.addTopic(topicName, messageType);
         }
       ),
@@ -1314,23 +1240,19 @@ function activate(context) {
 
           const channelName = `ROS Topic: ${topicName}`;
 
-          // Create output channel if it doesn't exist
           if (!channels[channelName]) {
             channels[channelName] =
               vscode.window.createOutputChannel(channelName);
             outputChannels.set(channelName, channels[channelName]);
           }
 
-          // Show the channel immediately
           channels[channelName].show();
 
-          // Get configuration values
           const config = vscode.workspace.getConfiguration(extensionHandle);
           const messageThrottle = config.get("messageThrottleRate", 100);
           const maxBufferSize = config.get("maxMessageBufferSize", 100);
           const maxOutputLines = config.get("maxOutputLines", 500);
 
-          // Create subscription data
           let subscriptionData = {
             visualizationPanel: null,
             creatingPanel: false,
@@ -1349,7 +1271,6 @@ function activate(context) {
             firstMessageTime: 0,
           };
 
-          // Subscribe to the topic
           channels[channelName].appendLine(
             `Attempting to subscribe to ${topicName} with type ${messageType}...`
           );
@@ -1362,7 +1283,6 @@ function activate(context) {
 
               updateTopicMessageRate(topicName, topicMessageRates);
 
-              // Skip if message comes too fast
               if (
                 subscriptionData.messageThrottle > 0 &&
                 now - subscriptionData.lastMessageTime <
@@ -1376,21 +1296,17 @@ function activate(context) {
                 subscriptionData.firstMessageTime = now;
               }
 
-              // Store only the latest message for output
               subscriptionData.pendingMessage = msg;
 
-              // Throttle output channel updates to reduce UI overhead
               if (
                 now - subscriptionData.lastOutputTime >=
                 subscriptionData.outputThrottle
               ) {
                 subscriptionData.lastOutputTime = now;
 
-                // Don't clear the entire channel - just append new info
                 const timestamp = new Date().toISOString();
                 const channel = channels[channelName];
 
-                // Only show a summary and the latest message
                 if (subscriptionData.messageCount === 1) {
                   channel.appendLine(`Topic: ${topicName}`);
                   channel.appendLine(`Message Type: ${messageType}`);
@@ -1406,7 +1322,6 @@ function activate(context) {
                   channel.appendLine("");
                 }
 
-                // Show message count and rate
                 const rate =
                   subscriptionData.messageCount > 1
                     ? `(~${Math.round(
@@ -1418,7 +1333,6 @@ function activate(context) {
                   `[${timestamp}] Message #${subscriptionData.messageCount} ${rate}`
                 );
 
-                // Show message
                 try {
                   displayMessageIntelligently(
                     channel,
@@ -1434,9 +1348,7 @@ function activate(context) {
                 }
                 channel.appendLine("");
 
-                // Track output lines and clear if too many
-                // Guess how many lines this will take
-                let estimatedLines = 5; // Default
+                let estimatedLines = 5;
                 if (
                   messageType &&
                   messageType.includes("LaserScan") &&
@@ -1480,11 +1392,9 @@ function activate(context) {
                   subscriptionData.outputLineCount = 3;
                 }
 
-                // Clear the pending message after displaying
                 subscriptionData.pendingMessage = null;
               }
 
-              // See if we can visualize this
               const detectedType = VisualizationPanel.detectMessageType(
                 messageType,
                 msg
@@ -1536,7 +1446,6 @@ function activate(context) {
             channels[channelName].appendLine(`Waiting for messages...`);
             channels[channelName].appendLine("");
 
-            // Store the subscription data in channels for cleanup tracking
             channels[channelName].subscriptionData = subscriptionData;
             channels[channelName].topicName = topicName;
 
@@ -1574,7 +1483,6 @@ function activate(context) {
           const topics = ws.topics;
           const subscription = topics ? topics.get(topicName) : null;
 
-          // Clean up visualization panel if exists
           if (
             subscription &&
             subscription.subscriptionData &&
@@ -1585,16 +1493,13 @@ function activate(context) {
             subscription.subscriptionData.creatingPanel = false;
           }
 
-          // Unsubscribe from the topic
           const unsubscribed = ws.unsubscribeTopic(topicName);
 
-          // Clean up subscription data
           if (subscription && subscription.subscriptionData) {
             subscription.subscriptionData.pendingMessage = null;
             subscription.subscriptionData = null;
           }
 
-          // Clean up output channels
           const channelName = `ROS Topic: ${topicName}`;
           if (channels[channelName]) {
             channels[channelName].clear();
@@ -1602,13 +1507,11 @@ function activate(context) {
               `[Unsubscribed from ${topicName}]`
             );
             channels[channelName].hide();
-            // Dispose the channel
             channels[channelName].dispose();
             delete channels[channelName];
             outputChannels.delete(channelName);
           }
 
-          // Also clean up any legacy node-based channels
           for (const [name, channel] of outputChannels) {
             if (name !== "main" && name.includes(topicName)) {
               channel.clear();
@@ -1626,7 +1529,6 @@ function activate(context) {
               `Unsubscribed from topic: ${topicName}`
             );
           } else {
-            // Revert UI state if unsubscribe failed
             tree.setTopicSubscriptionState(topicName, true);
             vscode.window.showWarningMessage(
               `Failed to unsubscribe from topic: ${topicName}`
@@ -1642,11 +1544,10 @@ function activate(context) {
             return;
           }
 
-          // Use the existing inspect-topic-message command
-          vscode.commands.executeCommand(
-            `${extensionHandle}.inspect-topic-message`,
-            topic
-          );
+                  vscode.commands.executeCommand(
+          `${extensionHandle}.inspect-topic-message`,
+          topic
+        );
         }
       ),
       vscode.commands.registerCommand(
@@ -1704,7 +1605,6 @@ function activate(context) {
 
     channels["main"].show();
 
-    // Store references for cleanup in deactivate
     global.vsCodeRosExtensionContext = {
       ws,
       outputChannels,
@@ -1721,20 +1621,16 @@ function activate(context) {
 }
 
 function deactivate() {
-  // Dispose all resources to prevent memory leaks
   try {
-    // Access variables from activate scope if they exist
     const context = global.vsCodeRosExtensionContext;
     if (!context) return;
 
     const { ws, outputChannels, channels, tree } = context;
 
-    // Disconnect from ROS 2 bridge if connected
     if (ws && ws.isConnected()) {
       ws.disconnect();
     }
 
-    // Dispose all output channels
     if (outputChannels) {
       outputChannels.forEach((channel) => {
         channel.dispose();
@@ -1742,7 +1638,6 @@ function deactivate() {
       outputChannels.clear();
     }
 
-    // Dispose main channels
     if (channels) {
       Object.values(channels).forEach((channel) => {
         if (channel && channel.dispose) {
@@ -1751,7 +1646,6 @@ function deactivate() {
       });
     }
 
-    // Dispose all webview panels
     if (VisualizationPanel && VisualizationPanel.disposeAll) {
       VisualizationPanel.disposeAll();
     }
@@ -1772,12 +1666,10 @@ function deactivate() {
       MessageInspectorPanel.currentPanel.dispose();
     }
 
-    // Clear tree provider
     if (tree) {
       tree.resetAllCheckboxes();
     }
 
-    // Clear global context
     global.vsCodeRosExtensionContext = null;
   } catch (error) {
     console.error("Error during deactivation:", error);

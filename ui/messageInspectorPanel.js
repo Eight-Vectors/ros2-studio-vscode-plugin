@@ -38,7 +38,6 @@ class MessageInspectorPanel {
     this._update();
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
-    // Listen for theme changes
     vscode.window.onDidChangeActiveColorTheme(() => {
       this._update();
     }, null, this._disposables);
@@ -292,7 +291,6 @@ class MessageInspectorPanel {
       const htmlContent = this._getHtmlContent();
       this._panel.webview.html = htmlContent;
     } catch (error) {
-      // Error generating HTML
       this._panel.webview.html = `
         <html>
           <body>
@@ -697,7 +695,6 @@ class MessageInspectorPanel {
                 let html = '<div class="definition-container">';
                 html += '<h2>' + serviceType + '</h2>';
                 
-                // Request section
                 html += '<div class="service-section">';
                 html += '<div class="section-title">Request</div>';
                 if (Object.keys(requestDetails).length === 0) {
@@ -710,7 +707,6 @@ class MessageInspectorPanel {
                 }
                 html += '</div>';
                 
-                // Response section
                 html += '<div class="service-section">';
                 html += '<div class="section-title">Response</div>';
                 if (Object.keys(responseDetails).length === 0) {
@@ -723,14 +719,12 @@ class MessageInspectorPanel {
                 }
                 html += '</div>';
                 
-                // Add template generation buttons for services
                 html += '<button class="template-button" onclick="generateServiceTemplate(&quot;request&quot;)">Generate Request Template</button>';
                 html += ' ';
                 html += '<button class="template-button" onclick="generateServiceTemplate(&quot;response&quot;)">Generate Response Template</button>';
                 
                 html += '</div>';
                 
-                // Store the details for template generation
                 window.currentServiceType = serviceType;
                 window.currentServiceRequestDetails = requestDetails;
                 window.currentServiceResponseDetails = responseDetails;
@@ -745,7 +739,6 @@ class MessageInspectorPanel {
                     html += '<div class="type-header">' + typeName + '</div>';
                 }
                 
-                // Render constants
                 if (typeDef.constants && typeDef.constants.length > 0) {
                     typeDef.constants.forEach(constant => {
                         html += '<div class="constant">';
@@ -758,7 +751,6 @@ class MessageInspectorPanel {
                     }
                 }
                 
-                // Render fields
                 typeDef.fields.forEach(field => {
                     html += '<div class="field">';
                     html += '<span class="field-name">' + field.name + '</span>';
@@ -778,10 +770,8 @@ class MessageInspectorPanel {
             }
             
             function showJsonTemplate(messageType, templateJson) {
-                // Find or create template container
                 let templateContainer = document.getElementById('templateContainer');
                 if (!templateContainer) {
-                    // Add it after the results div
                     const resultsDiv = document.getElementById('results');
                     templateContainer = document.createElement('div');
                     templateContainer.id = 'templateContainer';
@@ -849,7 +839,6 @@ class MessageInspectorPanel {
                 let html = '<div class="definition-container">';
                 html += '<h2>' + actionType + '</h2>';
                 
-                // Goal section
                 html += '<div class="service-section">';
                 html += '<div class="section-title">Goal</div>';
                 if (Object.keys(goalDetails).length === 0) {
@@ -862,7 +851,6 @@ class MessageInspectorPanel {
                 }
                 html += '</div>';
                 
-                // Result section
                 html += '<div class="service-section">';
                 html += '<div class="section-title">Result</div>';
                 if (Object.keys(resultDetails).length === 0) {
@@ -875,7 +863,6 @@ class MessageInspectorPanel {
                 }
                 html += '</div>';
                 
-                // Feedback section
                 html += '<div class="service-section">';
                 html += '<div class="section-title">Feedback</div>';
                 if (Object.keys(feedbackDetails).length === 0) {
@@ -888,7 +875,6 @@ class MessageInspectorPanel {
                 }
                 html += '</div>';
                 
-                // Add template generation buttons for actions
                 html += '<button class="template-button" onclick="generateActionTemplate(&quot;goal&quot;)">Generate Goal Template</button>';
                 html += ' ';
                 html += '<button class="template-button" onclick="generateActionTemplate(&quot;result&quot;)">Generate Result Template</button>';
@@ -897,7 +883,6 @@ class MessageInspectorPanel {
                 
                 html += '</div>';
                 
-                // Store the details for template generation
                 window.currentActionType = actionType;
                 window.currentActionGoalDetails = goalDetails;
                 window.currentActionResultDetails = resultDetails;

@@ -85,13 +85,11 @@ class ParametersPanel {
 
     this._rosbridgeClient.getParameters(this._nodeName, (parameters, error) => {
       if (error === "manual_mode") {
-        // rosapi not available, switch to manual mode
         this._manualMode = true;
         vscode.window.showInformationMessage(
           "rosapi node not found. Using manual parameter mode. You can add parameters manually."
         );
         
-        // Load parameters from manually added list
         if (this._manualParameterNames.length > 0) {
           this._rosbridgeClient.getParameterValues(this._manualParameterNames, (params) => {
             this._parameters = params.filter(p => p.value !== null);
@@ -136,39 +134,30 @@ class ParametersPanel {
   _updateParameter(name, value) {
     let parsedValue = value;
     
-    // Preserve original parameter type when parsing
     const originalParam = this._parameters.find(p => p.name === name);
     const originalValue = originalParam ? originalParam.value : null;
     const originalType = originalValue !== null ? typeof originalValue : null;
     
-    // Value might already be parsed (if it's an array from JSON.parse)
     if (typeof value === 'string') {
       try {
-        // Try to parse as JSON first (for arrays that were edited as JSON)
         const jsonParsed = JSON.parse(value);
         if (Array.isArray(jsonParsed)) {
           parsedValue = jsonParsed;
         } else if (value === "true" || value === "false") {
           parsedValue = value === "true";
         } else if (!isNaN(Number(value))) {
-          // Check if original was a float/double by looking for decimal point
           if (originalType === 'number' && !Number.isInteger(originalValue)) {
-            // Original was a double, parse as float
             parsedValue = parseFloat(value);
           } else if (value.includes('.')) {
-            // User entered a decimal, parse as float
             parsedValue = parseFloat(value);
           } else {
-            // Parse as integer
             parsedValue = parseInt(value, 10);
           }
         }
       } catch {
-        // Not valid JSON, try other parsing
         if (value === "true" || value === "false") {
           parsedValue = value === "true";
         } else if (!isNaN(Number(value))) {
-          // Same number parsing logic as above
           if (originalType === 'number' && !Number.isInteger(originalValue)) {
             parsedValue = parseFloat(value);
           } else if (value.includes('.')) {
@@ -177,11 +166,9 @@ class ParametersPanel {
             parsedValue = parseInt(value, 10);
           }
         }
-        // Otherwise keep as string
       }
     }
 
-    // Set parameter on the specific ROS2 node
     this._rosbridgeClient.setNodeParameter(this._nodeName, name, parsedValue, (success, error) => {
       if (error) {
         vscode.window.showErrorMessage(`Error setting parameter ${name}: ${error}`);
@@ -210,38 +197,31 @@ class ParametersPanel {
     });
   }
 
-  // Add parameter manually when rosapi is not available
   _addManualParameter(paramName) {
     if (!paramName || paramName.trim() === '') {
       return;
     }
 
-    // Ensure parameter name has proper format
     let fullParamName = paramName;
     if (!paramName.startsWith('/')) {
       const nodePrefix = this._nodeName.startsWith('/') ? this._nodeName : '/' + this._nodeName;
       fullParamName = `${nodePrefix}/${paramName}`;
     }
 
-    // Check if already exists
     if (this._manualParameterNames.includes(fullParamName)) {
       vscode.window.showWarningMessage(`Parameter ${fullParamName} already exists`);
       return;
     }
 
-    // Add to list and save
     this._manualParameterNames.push(fullParamName);
     this._saveStoredParameters();
 
-    // Fetch the value
     this._rosbridgeClient.getParameter(fullParamName, (value, error) => {
       if (error) {
         vscode.window.showErrorMessage(`Parameter ${fullParamName} not found on ROS 2 parameter server`);
-        // Remove from list if not found
         this._manualParameterNames = this._manualParameterNames.filter(p => p !== fullParamName);
         this._saveStoredParameters();
       } else {
-        // Refresh to show the new parameter
         this._refreshParameters();
       }
     });
@@ -254,12 +234,10 @@ class ParametersPanel {
   }
 
   _loadStoredParameters() {
-    // Parameters are not persisted between sessions
     return [];
   }
 
   _saveStoredParameters() {
-    // Parameters are not persisted between sessions
   }
 
   _getHtmlContent() {
@@ -582,13 +560,11 @@ class ParametersPanel {
                 let parsedValue = value;
                 let hasChanged = false;
                 
-                // Parse the value based on type
                 if (inputElement.dataset.paramType === 'array') {
                     try {
                         parsedValue = JSON.parse(value);
                         hasChanged = JSON.stringify(parsedValue) !== JSON.stringify(original);
                     } catch (e) {
-                        // Invalid JSON, mark as changed and show error
                         hasChanged = true;
                         inputElement.style.borderColor = 'var(--vscode-errorForeground)';
                         inputElement.title = 'Invalid JSON: ' + e.message;
@@ -607,7 +583,6 @@ class ParametersPanel {
                     inputElement.closest('.parameter-item').classList.remove('has-changes');
                 }
                 
-                // Update UI to show/hide buttons
                 updateParameterActions(name, hasChanged);
             }
 
@@ -630,7 +605,6 @@ class ParametersPanel {
                 if (input.tagName === 'SELECT') {
                     input.value = String(original);
                 } else if (input.tagName === 'TEXTAREA') {
-                    // For arrays, show formatted JSON
                     input.value = JSON.stringify(original, null, 2);
                     input.style.borderColor = '';
                     input.title = '';
@@ -688,7 +662,6 @@ class ParametersPanel {
                     const item = document.createElement('div');
                     item.className = 'parameter-item';
                     
-                    // Check if there are pending changes for this parameter
                     if (pendingChanges.has(param.name)) {
                         item.classList.add('has-changes');
                     }
@@ -696,7 +669,6 @@ class ParametersPanel {
                     const type = getParameterType(param.value);
                     const isSimpleType = ['bool', 'int', 'float', 'double', 'string'].includes(type);
                     
-                    // Create parameter description based on name
                     const description = getParameterDescription(param.name);
 
                     let valueInput = '';
@@ -707,7 +679,6 @@ class ParametersPanel {
                                    '<option value="false"' + (param.value === false ? ' selected' : '') + '>false</option>' +
                                    '</select>';
                     } else if (isSimpleType) {
-                        // Add title attribute for tooltip on long values
                         const titleAttr = (type === 'string' && param.value.length > 50) ? ' title="' + param.value + '"' : '';
                         valueInput = '<input type="text" class="parameter-input"' +
                                    ' value="' + param.value + '"' +
@@ -715,14 +686,12 @@ class ParametersPanel {
                                    titleAttr +
                                    ' oninput="onParameterChange(\\'' + param.name + '\\', this.value, this)">';
                     } else if (type === 'array') {
-                        // For arrays, show as editable JSON with validation
                         valueInput = '<textarea class="parameter-input" style="min-height: 60px; font-family: monospace;"' +
                                    ' data-param-name="' + param.name + '"' +
                                    ' data-param-type="array"' +
                                    ' oninput="onParameterChange(\\'' + param.name + '\\', this.value, this)">' +
                                    JSON.stringify(param.value, null, 2) + '</textarea>';
                     } else {
-                        // For complex objects, show as read-only JSON
                         valueInput = '<pre class="parameter-input" style="color: var(--vscode-descriptionForeground); margin: 0; font-size: 12px;">' +
                                    JSON.stringify(param.value, null, 2) + '</pre>';
                     }
@@ -743,7 +712,6 @@ class ParametersPanel {
 
                     container.appendChild(item);
                     
-                    // Restore action buttons if there are pending changes
                     if (pendingChanges.has(param.name)) {
                         updateParameterActions(param.name, true);
                     }
@@ -751,7 +719,6 @@ class ParametersPanel {
             }
 
             function getParameterDescription(name) {
-                // Add descriptions for common ROS 2 parameters
                 const descriptions = {
                     'use_sim_time': 'Use simulation time instead of wall-clock time',
                     'frame_id': 'The TF frame ID for this node',
@@ -761,10 +728,8 @@ class ParametersPanel {
                     'topic_name': 'Name of the ROS 2 topic to publish/subscribe'
                 };
                 
-                // Check exact match first
                 if (descriptions[name]) return descriptions[name];
                 
-                // Check partial matches
                 for (const [key, desc] of Object.entries(descriptions)) {
                     if (name.includes(key)) return desc;
                 }
@@ -801,12 +766,10 @@ class ParametersPanel {
                     case 'updateParameters':
                         currentParameters = message.parameters;
                         isManualMode = message.manualMode || false;
-                        // Update original values with the fresh data from server
                         originalValues.clear();
                         message.parameters.forEach(param => {
                             originalValues.set(param.name, param.value);
                         });
-                        // Clear any pending changes since we have fresh data
                         pendingChanges.clear();
                         document.getElementById('nodeInfo').textContent = 
                             \`Node: \${message.nodeName} | \${message.parameters.length} parameters\${isManualMode ? ' (Manual Mode)' : ''}\`;

@@ -1,6 +1,6 @@
 # ROS 2 Studio
 
-[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/eightvectors.vscode-ros-extension)](https://marketplace.visualstudio.com/items?itemName=eightvectors.vscode-ros-extension)
+[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/eightvectors.ros2-studio)](https://marketplace.visualstudio.com/items?itemName=eightvectors.ros2-studio)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Connect to ROS 2 systems via rosbridge WebSocket protocol directly from VS Code. Visualize topics, call services, and interact with ROS 2 nodes without leaving your development environment.
@@ -53,9 +53,9 @@ Connect to ROS 2 systems via rosbridge WebSocket protocol directly from VS Code.
 
 ### Extension Settings
 
-| Setting                             | Description             | Default               |
-| ----------------------------------- | ----------------------- | --------------------- |
-| `vscode-ros-extension.rosbridgeUrl` | Rosbridge WebSocket URL | `ws://localhost:9090` |
+| Setting                    | Description             | Default               |
+| -------------------------- | ----------------------- | --------------------- |
+| `ros2-studio.rosbridgeUrl` | Rosbridge WebSocket URL | `ws://localhost:9090` |
 
 ### Available Commands
 
@@ -87,14 +87,14 @@ Connect to ROS 2 systems via rosbridge WebSocket protocol directly from VS Code.
    - Click "Connect" or use Command Palette: `Connect to Remote`
    - Default connection is `ws://localhost:9090`
 
-   ![Connect to ROS 2 Studio](https://raw.githubusercontent.com/Eight-Vectors/-vscode-ros-extension-assets/main/gifs/connect-rosbridge.gif)
+   ![Connect to ROS 2 Studio](https://eight-vectors.github.io/ros2-studio-extension-assets/gifs/connect-rosbridge.gif)
 
 3. **Browse ROS 2 entities**:
 
    - Expand the tree to see nodes, topics, and services
    - Right-click for context actions
 
-   ![Browse ROS 2 Entities](https://raw.githubusercontent.com/Eight-Vectors/-vscode-ros-extension-assets/main/gifs/browse-entities.gif)
+   ![Browse ROS 2 Entities](https://eight-vectors.github.io/ros2-studio-extension-assets/gifs/browse-entities.gif)
 
 ### Visualization Features
 
@@ -109,7 +109,7 @@ Connect to ROS 2 systems via rosbridge WebSocket protocol directly from VS Code.
    - Scroll to zoom
    - Right-click drag to pan
 
-![Topic Visualization](https://raw.githubusercontent.com/Eight-Vectors/-vscode-ros-extension-assets/main/gifs/topic-visualization.gif)
+![Topic Visualization](https://eight-vectors.github.io/ros2-studio-extension-assets/gifs/topic-visualization.gif)
 
 ### Supported Visualization Types
 
@@ -138,7 +138,7 @@ The extension provides a comprehensive parameter configuration panel for ROS 2 n
    - Arrays (JSON format with validation)
    - Read-only display for complex objects
 
-![Node Parameters Panel](https://raw.githubusercontent.com/Eight-Vectors/-vscode-ros-extension-assets/main/gifs/node-parameters.gif)
+![Node Parameters Panel](https://eight-vectors.github.io/ros2-studio-extension-assets/gifs/node-parameters.gif)
 
 ### ROS 2 Bag Recorder
 
@@ -156,7 +156,7 @@ The Bag Recorder panel helps you create ROS 2 bag recording commands:
    - Use the command on your ROS 2 machine to start recording
 4. **Access Panel** - Use Command Palette: "Open Bag Recorder" or right-click topics
 
-![Bag Recorder Panel](https://raw.githubusercontent.com/Eight-Vectors/-vscode-ros-extension-assets/main/gifs/bag-recorder.gif)
+![Bag Recorder Panel](https://eight-vectors.github.io/ros2-studio-extension-assets/gifs/bag-recorder.gif)
 
 ### ROS 2 Message/Service/Action Type Inspector
 
@@ -179,7 +179,7 @@ The Message/Service/Action Type Inspector helps developers quickly generate JSON
    - Modify the values as needed for your use case
    - The template includes all fields with appropriate default values
 
-![Message/Service Inspector](https://raw.githubusercontent.com/Eight-Vectors/-vscode-ros-extension-assets/main/gifs/message-service-inspector.gif)
+![Message/Service Inspector](https://eight-vectors.github.io/ros2-studio-extension-assets/gifs/message-service-inspector.gif)
 
 ## 📄 License
 
@@ -195,4 +195,4 @@ This extension is developed and maintained by EightVectors. For commercial suppo
 
 ## 📮 Support
 
-For issues and feature requests, please use the [GitHub issue tracker](https://github.com/YOUR-USERNAME/vscode-ros-extension/issues).
+For issues and feature requests, please use the [GitHub issue tracker](https://github.com/Eight-Vectors/ros2-studio-vscode-plugin/issues).

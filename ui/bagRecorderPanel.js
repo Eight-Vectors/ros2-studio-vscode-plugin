@@ -32,7 +32,6 @@ class BagRecorderPanel {
     if (BagRecorderPanel.currentPanel) {
       BagRecorderPanel.currentPanel._addTopic(topicName, topicType);
     } else {
-      // Store topic to add when panel is created
       if (!BagRecorderPanel._pendingTopics) {
         BagRecorderPanel._pendingTopics = [];
       }
@@ -52,7 +51,6 @@ class BagRecorderPanel {
     this._outputChannel =
       vscode.window.createOutputChannel("ROS2 Bag Recorder");
 
-    // Add any pending topics
     if (BagRecorderPanel._pendingTopics) {
       BagRecorderPanel._pendingTopics.forEach((topic) => {
         this._selectedTopics.set(topic.name, topic);
@@ -116,14 +114,11 @@ class BagRecorderPanel {
       return;
     }
 
-    // Construct the ROS2 bag record command
     const topics = Array.from(this._selectedTopics.keys());
     const command = this._constructBagCommand(null, topics);
     
-    // Store the command to display in the UI
     this._currentCommand = command;
 
-    // Show the command in output channel
     this._outputChannel.clear();
     this._outputChannel.appendLine("=== ROS2 Bag Recorder ===");
     this._outputChannel.appendLine("");
@@ -144,27 +139,19 @@ class BagRecorderPanel {
     this._outputChannel.appendLine("Note: You can add -o flag to specify output path");
     this._outputChannel.show();
 
-    // Update UI to show the command
     this._update();
 
-    // Show info message
     vscode.window.showInformationMessage(
       `ROS2 bag command generated. You can copy it from the panel.`
     );
   }
 
   _constructBagCommand(outputPath, topics) {
-    // Base command
     let command = "ros2 bag record";
 
-    // Add each topic
     topics.forEach((topic) => {
       command += ` ${topic}`;
     });
-
-    // Add additional options (can be made configurable later)
-    // command += " --compression-mode file";
-    // command += " --compression-format zstd";
 
     return command;
   }
@@ -188,10 +175,8 @@ class BagRecorderPanel {
           })
           .then((fileUri) => {
             if (fileUri) {
-              // Extract just the filename from the local path
               const filename = fileUri.fsPath.split("/").pop();
 
-              // Suggest a remote path with the same filename
               const suggestedRemotePath = `/home/ros/bags/${filename}`;
 
               vscode.window
@@ -613,7 +598,6 @@ class BagRecorderPanel {
   dispose() {
     BagRecorderPanel.currentPanel = undefined;
 
-    // Dispose output channel
     if (this._outputChannel) {
       this._outputChannel.dispose();
     }

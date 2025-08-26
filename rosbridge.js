@@ -33,7 +33,7 @@ class RosbridgeClient {
   }
 
   _getMaxReconnectAttempts() {
-    const config = vscode.workspace.getConfiguration("vscode-ros-extension");
+    const config = vscode.workspace.getConfiguration("ros2-studio");
     const attempts = config.get("maxReconnectAttempts", 10);
     return attempts === 0 ? Infinity : attempts;
   }
@@ -43,7 +43,6 @@ class RosbridgeClient {
   }
 
   formatError(error) {
-    // Handle AggregateError specifically
     if (error && error.name === "AggregateError" && error.errors) {
       const errorMessages = error.errors.map((err) => {
         if (err instanceof Error) {
@@ -75,19 +74,16 @@ class RosbridgeClient {
       return Promise.resolve();
     }
 
-    // Prevent multiple simultaneous connections
     if (this.isManuallyConnecting) {
       return Promise.reject(new Error("Connection already in progress"));
     }
 
     this.isManuallyConnecting = true;
 
-    // Notify about connection attempt starting
     if (this.onConnectionStatusChange) {
       this.onConnectionStatusChange("connecting");
     }
 
-    // Clean up old event handlers if they exist
     this.cleanupEventHandlers();
 
     return new Promise((resolve, reject) => {
@@ -95,7 +91,6 @@ class RosbridgeClient {
         url: this.url,
       });
 
-      // Store event handlers for cleanup
       this.eventHandlers.connection = () => {
         vscode.window.showInformationMessage("Connected to ROS 2 bridge");
         this.reconnectAttempts = 0;
@@ -103,7 +98,6 @@ class RosbridgeClient {
         this.isReconnecting = false;
         this.isManuallyConnecting = false;
 
-        // Notify about successful connection
         if (this.onConnectionStatusChange) {
           this.onConnectionStatusChange("connected");
         }
@@ -118,17 +112,14 @@ class RosbridgeClient {
       this.eventHandlers.error = (error) => {
         const errorMessage = this.formatError(error);
 
-        // Log error to output channel
         this.pChannel.appendLine(
           `ROS 2 bridge connection error: ${errorMessage}`
         );
 
-        // Auto-show the output channel on error
         this.pChannel.show(true);
 
         this.isManuallyConnecting = false;
 
-        // Notify about connection failure
         if (this.onConnectionStatusChange) {
           this.onConnectionStatusChange("disconnected");
         }
@@ -161,15 +152,13 @@ class RosbridgeClient {
 
     this.isReconnecting = true;
 
-    // Notify about reconnection attempt
     if (this.onConnectionStatusChange) {
       this.onConnectionStatusChange("reconnecting");
     }
 
-    // Update context for UI
     vscode.commands.executeCommand(
       "setContext",
-      "vscode-ros-extension.isReconnecting",
+      "ros2-studio.isReconnecting",
       true
     );
 
@@ -183,7 +172,7 @@ class RosbridgeClient {
       this.isReconnecting = false;
       vscode.commands.executeCommand(
         "setContext",
-        "vscode-ros-extension.isReconnecting",
+        "ros2-studio.isReconnecting",
         false
       );
       return;
@@ -223,7 +212,7 @@ class RosbridgeClient {
         this.isReconnecting = false;
         vscode.commands.executeCommand(
           "setContext",
-          "vscode-ros-extension.isReconnecting",
+          "ros2-studio.isReconnecting",
           false
         );
       }
@@ -268,7 +257,6 @@ class RosbridgeClient {
 
     const existingTopic = this.topics.get(topicName);
     if (existingTopic) {
-      // Unsubscribe previous callback if exists
       const oldCallback = this.subscriptions.get(topicName);
       if (oldCallback) {
         existingTopic.unsubscribe(oldCallback);
@@ -300,7 +288,6 @@ class RosbridgeClient {
 
     if (topic && callback) {
       topic.unsubscribe(callback);
-      // Properly dispose of the topic to free resources
       topic.ros = null;
       this.topics.delete(topicName);
       this.subscriptions.delete(topicName);
@@ -1011,18 +998,15 @@ class RosbridgeClient {
     this.isReconnecting = false;
     this.isManuallyConnecting = false; // Reset this flag too
 
-    // Notify about stopping reconnection
     if (this.onConnectionStatusChange) {
       this.onConnectionStatusChange("disconnected");
     }
 
-    // Clear any pending reconnection timeout
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
     }
 
-    // Close the current connection if it exists
     if (this.ros) {
       this.cleanupEventHandlers();
       this.ros.close();
@@ -1031,7 +1015,7 @@ class RosbridgeClient {
 
     vscode.commands.executeCommand(
       "setContext",
-      "vscode-ros-extension.isReconnecting",
+      "ros2-studio.isReconnecting",
       false
     );
 
@@ -1042,16 +1026,13 @@ class RosbridgeClient {
   forceReset() {
     this.pChannel.appendLine("Force resetting connection...");
 
-    // First disconnect completely
     this.disconnect();
 
-    // Reset connection state
     this.reconnectAttempts = 0;
     this.reconnectDelay = 1000;
     this.shouldReconnect = true;
     this.isManuallyConnecting = false;
 
-    // Reconnect
     return this.connect();
   }
 
@@ -1059,39 +1040,33 @@ class RosbridgeClient {
     this.shouldReconnect = false;
     this.isManuallyConnecting = false;
 
-    // Clear any pending reconnection timeout
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
     }
 
-    // Notify about disconnection
     if (this.onConnectionStatusChange) {
       this.onConnectionStatusChange("disconnected");
     }
 
-    // Update context
     vscode.commands.executeCommand(
       "setContext",
-      "vscode-ros-extension.isReconnecting",
+      "ros2-studio.isReconnecting",
       false
     );
 
     if (this.ros) {
-      // Unsubscribe and clean up all topics
       this.topics.forEach((topic, topicName) => {
         const callback = this.subscriptions.get(topicName);
         if (callback) {
           topic.unsubscribe(callback);
         }
-        // Properly dispose of the topic
         topic.ros = null;
       });
 
       this.topics.clear();
       this.subscriptions.clear();
 
-      // Clean up event handlers
       this.cleanupEventHandlers();
 
       this.ros.close();

@@ -5,7 +5,6 @@ function displayMessageIntelligently(channel, message, messageType, extensionHan
   const maxDisplayLength = config.get("maxMessageDisplayLength", 2000);
   const showFullData = config.get("showFullDataForKnownTypes", true);
   
-  // Check for known message types first
   if (messageType) {
     if (messageType.includes("OccupancyGrid")) {
       displayOccupancyGridMessage(channel, message, showFullData);
@@ -38,7 +37,6 @@ function displayMessageIntelligently(channel, message, messageType, extensionHan
     }
   }
   
-  // For other message types
   if (message && typeof message === 'object') {
     if (hasGeometricData(message)) {
       displayGeometricMessage(channel, message, messageType);
@@ -61,7 +59,6 @@ function displayMessageIntelligently(channel, message, messageType, extensionHan
     }
   }
   
-  // Show other messages as JSON
   displayDefaultMessage(channel, message, maxDisplayLength, isStatic);
 }
 
@@ -108,7 +105,6 @@ function hasArrayData(message) {
   return arrayFields.length > 0;
 }
 
-// Display functions for ROS message types
 function displayOccupancyGridMessage(channel, message, showFullData) {
   channel.appendLine("{");
   if (message.header) {
@@ -256,12 +252,10 @@ function displayTFMessage(channel, message) {
 function displayBinaryMessage(channel, message, messageType, showFullData) {
   channel.appendLine("{");
   
-  // Display header if present
   if (message.header) {
     channel.appendLine(`  "header": ${formatJson(message.header, 2)},`);
   }
   
-  // Display metadata fields
   const metadataFields = ['height', 'width', 'encoding', 'step', 'point_step', 
                          'row_step', 'is_bigendian', 'is_dense', 'format'];
   
@@ -271,12 +265,10 @@ function displayBinaryMessage(channel, message, messageType, showFullData) {
     }
   });
   
-  // Display fields array if present
   if (message.fields) {
     channel.appendLine(`  "fields": ${formatJson(message.fields, 2)},`);
   }
   
-  // Display data
   if (message.data) {
     const dataLength = message.data.length || message.data.byteLength;
     
@@ -298,7 +290,6 @@ function displayGeometricMessage(channel, message, messageType) {
     channel.appendLine(`  "header": ${formatJson(message.header, 2)},`);
   }
   
-  // Handle transforms array
   if (message.transforms && Array.isArray(message.transforms)) {
     channel.appendLine(`  "transforms": [`);
     message.transforms.forEach((tf, index) => {
@@ -306,7 +297,6 @@ function displayGeometricMessage(channel, message, messageType) {
     });
     channel.appendLine(`  ]`);
   } else {
-    // Handle single transform/pose
     const geometricFields = ['transform', 'pose', 'position', 'orientation', 
                            'translation', 'rotation', 'twist', 'accel'];
     
@@ -319,7 +309,6 @@ function displayGeometricMessage(channel, message, messageType) {
       channel.appendLine(`  "${field}": ${formatJson(message[field], 2)}${isLast ? '' : ','}`);
     });
     
-    // Add other fields
     displayOtherFields(channel, message, [...geometricFields, 'header', ...fields], 2);
   }
   
@@ -333,7 +322,6 @@ function displaySensorMessage(channel, message, messageType, showFullData) {
     channel.appendLine(`  "header": ${formatJson(message.header, 2)},`);
   }
   
-  // Display scan parameters
   const scanParams = ['angle_min', 'angle_max', 'angle_increment', 
                      'time_increment', 'scan_time', 'range_min', 'range_max'];
   
@@ -343,7 +331,6 @@ function displaySensorMessage(channel, message, messageType, showFullData) {
     }
   });
   
-  // Display ranges/intensities
   if (message.ranges) {
     displayArray(channel, "ranges", message.ranges, showFullData, 2);
   }
@@ -352,7 +339,6 @@ function displaySensorMessage(channel, message, messageType, showFullData) {
     displayArray(channel, "intensities", message.intensities, showFullData && message.intensities.length > 0, 2);
   }
   
-  // Display other sensor data fields
   displayOtherFields(channel, message, [...scanParams, 'header', 'ranges', 'intensities'], 2);
   
   channel.appendLine("}");
@@ -400,7 +386,6 @@ function displayDefaultMessage(channel, message, maxDisplayLength, isStatic = fa
   try {
     const msgStr = JSON.stringify(message, null, 2);
     
-    // Keep full message for static topics
     if (!isStatic && msgStr.length > maxDisplayLength) {
       const truncated = msgStr.substring(0, maxDisplayLength);
       const lastNewline = truncated.lastIndexOf('\n');
@@ -410,7 +395,6 @@ function displayDefaultMessage(channel, message, maxDisplayLength, isStatic = fa
       channel.appendLine(msgStr);
     }
   } catch (e) {
-    // Handle circular references
     try {
       const seen = new WeakSet();
       const filtered = JSON.stringify(message, (key, value) => {
@@ -429,7 +413,6 @@ function displayDefaultMessage(channel, message, maxDisplayLength, isStatic = fa
   }
 }
 
-// Helper functions
 function formatJson(obj, indent) {
   return JSON.stringify(obj, null, 2).split('\n').join('\n' + ' '.repeat(indent));
 }
@@ -449,7 +432,6 @@ function displayArray(channel, name, array, showFull, indent) {
   if (!showFull || array.length > 1000) {
     channel.appendLine(`${spaces}"${name}": [Array of ${array.length} elements]`);
   } else if (array.length > 100) {
-    // Format large arrays nicely
     channel.appendLine(`${spaces}"${name}": [`);
     const chunkSize = 20;
     for (let i = 0; i < array.length; i += chunkSize) {

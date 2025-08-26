@@ -47,15 +47,13 @@ class ConnectionDashboard {
     this._updateContent(rosbridgeClient);
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
-    // Clear any existing interval before creating a new one
     if (this._updateInterval) {
       clearInterval(this._updateInterval);
     }
     
-    // Start periodic updates with a longer interval to reduce logging
     this._updateInterval = setInterval(() => {
       this._updateSystemInfo();
-    }, 5000); // Update every 5 seconds instead of 2
+    }, 5000);
   }
 
   async _updateSystemInfo() {
@@ -64,19 +62,16 @@ class ConnectionDashboard {
     }
 
     try {
-      // Get nodes
       this._rosbridgeClient.getNodes((nodes) => {
         this._systemInfo.nodes = nodes || [];
         this._updateDashboard();
       });
 
-      // Get topics
       this._rosbridgeClient.getTopics((topics) => {
         this._systemInfo.topics = topics || [];
         this._updateDashboard();
       });
     } catch (error) {
-      // Show error to user as it's likely a rosbridge connection issue
       vscode.window.showErrorMessage(`Failed to update ROS 2 system info: ${error.message || error}`);
     }
   }
@@ -106,18 +101,14 @@ class ConnectionDashboard {
     this._rosbridgeClient = rosbridgeClient;
     this._panel.webview.html = this._getHtmlContent();
     
-    // Initial dashboard update to show connected status
     this._updateDashboard();
     
-    // Delay first system info update to ensure connection is stable
     setTimeout(() => {
       this._updateSystemInfo();
     }, 1000);
 
-    // Handle messages from webview
     this._panel.webview.onDidReceiveMessage(
       () => {
-        // Message handler
       },
       null,
       this._disposables
@@ -301,7 +292,6 @@ class ConnectionDashboard {
                 if (message.command === 'updateInfo') {
                     const data = message.data;
                     
-                    // Update connection status
                     const statusIndicator = document.getElementById('statusIndicator');
                     const statusText = document.getElementById('statusText');
                     const connectionStatus = document.getElementById('connectionStatus');
@@ -327,11 +317,9 @@ class ConnectionDashboard {
                         reconnectRow.style.display = 'none';
                     }
                     
-                    // Update connection details
                     document.getElementById('connectionUrl').textContent = data.url;
                     document.getElementById('connectionTime').textContent = data.connectionTime;
                     
-                    // Update metrics
                     document.getElementById('nodeCount').textContent = data.nodeCount;
                     document.getElementById('topicCount').textContent = data.topicCount;
                 }

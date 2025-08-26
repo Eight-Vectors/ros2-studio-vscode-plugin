@@ -1,5 +1,5 @@
 {
-  "name": "vscode-ros-extension",
+  "name": "ros2-studio",
   "displayName": "ROS 2 Studio",
   "description": "Connect to ROS 2 systems via rosbridge, visualize topics, call services, and interact with ROS 2 nodes directly from VS Code",
   "version": "0.3.3",
@@ -9,14 +9,14 @@
     "color": "#1e2327",
     "theme": "dark"
   },
-  "homepage": "https://github.com/Eight-Vectors/vscode-ros-extension#readme",
+  "homepage": "https://github.com/Eight-Vectors/ros2-studio#readme",
   "bugs": {
-    "url": "https://github.com/Eight-Vectors/vscode-ros-extension/issues"
+    "url": "https://github.com/Eight-Vectors/ros2-studio/issues"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Eight-Vectors/vscode-ros-extension.git"
+    "url": "https://github.com/Eight-Vectors/ros2-studio.git"
   },
   "keywords": [
     "ros",
@@ -63,82 +63,82 @@
   "contributes": {
     "commands": [
       {
-        "command": "vscode-ros-extension.connect-bridge",
+        "command": "ros2-studio.connect-bridge",
         "title": "Connect to Remote"
       },
       {
-        "command": "vscode-ros-extension.force-reset",
+        "command": "ros2-studio.force-reset",
         "title": "Force Reset Connection",
         "icon": "$(debug-restart)"
       },
       {
-        "command": "vscode-ros-extension.stop-retry",
+        "command": "ros2-studio.stop-retry",
         "title": "Force Stop Connection",
         "icon": "$(stop)"
       },
       {
-        "command": "vscode-ros-extension.disconnect-bridge",
+        "command": "ros2-studio.disconnect-bridge",
         "title": "Disconnect",
         "icon": "$(debug-disconnect)"
       },
       {
-        "command": "vscode-ros-extension.refresh-connections",
+        "command": "ros2-studio.refresh-connections",
         "title": "Refresh connection",
         "icon": "$(refresh)"
       },
       {
-        "command": "vscode-ros-extension.toggle-subscription",
+        "command": "ros2-studio.toggle-subscription",
         "title": "Subscribe"
       },
       {
-        "command": "vscode-ros-extension.subscribe-to-topic",
+        "command": "ros2-studio.subscribe-to-topic",
         "title": "Subscribe"
       },
       {
-        "command": "vscode-ros-extension.unsubscribe-from-topic",
+        "command": "ros2-studio.unsubscribe-from-topic",
         "title": "Unsubscribe"
       },
       {
-        "command": "vscode-ros-extension.get-parameters",
+        "command": "ros2-studio.get-parameters",
         "title": "Get Parameters",
         "icon": "$(settings-gear)"
       },
       {
-        "command": "vscode-ros-extension.reset-visualization-preference",
+        "command": "ros2-studio.reset-visualization-preference",
         "title": "Reset Visualization View Mode Preference"
       },
       {
-        "command": "vscode-ros-extension.add-to-bag-recorder",
+        "command": "ros2-studio.add-to-bag-recorder",
         "title": "Add to Bag Recorder",
         "icon": "$(record)"
       },
       {
-        "command": "vscode-ros-extension.open-bag-recorder",
+        "command": "ros2-studio.open-bag-recorder",
         "title": "Open ROS2 Bag Recorder",
         "icon": "$(record)"
       },
       {
-        "command": "vscode-ros-extension.open-message-inspector",
+        "command": "ros2-studio.open-message-inspector",
         "title": "Open Message/Service Inspector",
         "icon": "$(symbol-interface)"
       },
       {
-        "command": "vscode-ros-extension.inspect-topic-message",
+        "command": "ros2-studio.inspect-topic-message",
         "title": "Inspect Message Type",
         "icon": "$(info)"
       },
       {
-        "command": "vscode-ros-extension.inspect-topic-from-tree",
+        "command": "ros2-studio.inspect-topic-from-tree",
         "title": "Inspect",
         "icon": "$(info)"
       },
       {
-        "command": "vscode-ros-extension.inspect-service-type",
+        "command": "ros2-studio.inspect-service-type",
         "title": "Inspect Service Type",
         "icon": "$(info)"
       },
       {
-        "command": "vscode-ros-extension.inspect-action-type",
+        "command": "ros2-studio.inspect-action-type",
         "title": "Inspect Action Type",
         "icon": "$(info)"
       }
@@ -147,71 +147,71 @@
       "type": "object",
       "title": "Extension Configuration",
       "properties": {
-        "vscode-ros-extension.rosbridgeUrl": {
+        "ros2-studio.rosbridgeUrl": {
           "type": "string",
           "default": "ws://localhost:9090",
           "description": "Rosbridge WebSocket URL"
         },
-        "vscode-ros-extension.remoteBagPath": {
+        "ros2-studio.remoteBagPath": {
           "type": "string",
           "default": "/home/ros/bags",
           "description": "Default directory path on the remote ROS 2 machine for saving bag files"
         },
-        "vscode-ros-extension.messageThrottleRate": {
+        "ros2-studio.messageThrottleRate": {
           "type": "number",
           "default": 100,
           "minimum": 0,
           "maximum": 1000,
           "description": "Minimum milliseconds between message updates (0 to disable throttling)"
         },
-        "vscode-ros-extension.maxMessageBufferSize": {
+        "ros2-studio.maxMessageBufferSize": {
           "type": "number",
           "default": 100,
           "minimum": 10,
           "maximum": 1000,
           "description": "Maximum number of messages to keep in buffer per topic"
         },
-        "vscode-ros-extension.maxMessageDisplayLength": {
+        "ros2-studio.maxMessageDisplayLength": {
           "type": "number",
           "default": 2000,
           "minimum": 500,
           "maximum": 10000,
           "description": "Maximum characters to display for unknown message types"
         },
-        "vscode-ros-extension.showFullDataForKnownTypes": {
+        "ros2-studio.showFullDataForKnownTypes": {
           "type": "boolean",
           "default": true,
           "description": "Show full data arrays for known types like LaserScan ranges (may impact performance)"
         },
-        "vscode-ros-extension.maxOutputLines": {
+        "ros2-studio.maxOutputLines": {
           "type": "number",
           "default": 500,
           "minimum": 100,
           "maximum": 2000,
           "description": "Maximum lines to keep in output channel before clearing (prevents memory issues)"
         },
-        "vscode-ros-extension.maxMessagesToRetain": {
+        "ros2-studio.maxMessagesToRetain": {
           "type": "number",
           "default": 10,
           "minimum": 1,
           "maximum": 100,
           "description": "Maximum number of messages to retain per topic (prevents memory issues for infrequent topics)"
         },
-        "vscode-ros-extension.maxMemoryMB": {
+        "ros2-studio.maxMemoryMB": {
           "type": "number",
           "default": 1,
           "minimum": 0.1,
           "maximum": 10,
           "description": "Maximum memory (in MB) allowed for message buffer per topic before trimming old messages"
         },
-        "vscode-ros-extension.maxReconnectAttempts": {
+        "ros2-studio.maxReconnectAttempts": {
           "type": "number",
           "default": 10,
           "minimum": 0,
           "maximum": 100,
           "description": "Maximum number of reconnection attempts before giving up (0 = infinite)"
         },
-        "vscode-ros-extension.staticTopics": {
+        "ros2-studio.staticTopics": {
           "type": "array",
           "default": [
             "/robot_description",
@@ -224,7 +224,7 @@
             "type": "string"
           }
         },
-        "vscode-ros-extension.staticTopicPatterns": {
+        "ros2-studio.staticTopicPatterns": {
           "type": "array",
           "default": [
             ".*_static$",
@@ -236,7 +236,7 @@
             "type": "string"
           }
         },
-        "vscode-ros-extension.staticMessageTypes": {
+        "ros2-studio.staticMessageTypes": {
           "type": "array",
           "default": [
             ".*Parameter.*",
@@ -247,7 +247,7 @@
             "type": "string"
           }
         },
-        "vscode-ros-extension.staticTopicAutoDetectRate": {
+        "ros2-studio.staticTopicAutoDetectRate": {
           "type": "number",
           "default": 0.1,
           "minimum": 0.01,
@@ -259,193 +259,193 @@
     "keybindings": [],
     "viewsWelcome": [
       {
-        "view": "extWelcomeView",
-        "contents": "Welcome to ROS 2 Studio!\n\n[Connect](command:vscode-ros-extension.connect-bridge)",
-        "when": "!vscode-ros-extension.isConnecting && !vscode-ros-extension.isReconnecting"
+        "view": "ros2StudioWelcomeView",
+        "contents": "Welcome to ROS 2 Studio!\n\n[Connect](command:ros2-studio.connect-bridge)",
+        "when": "!ros2-studio.isConnecting && !ros2-studio.isReconnecting"
       },
       {
-        "view": "extWelcomeView",
-        "contents": "Welcome to ROS 2 Studio!\n\nConnecting...\n\n[Force Stop](command:vscode-ros-extension.stop-retry)",
-        "when": "vscode-ros-extension.isConnecting"
+        "view": "ros2StudioWelcomeView",
+        "contents": "Welcome to ROS 2 Studio!\n\nConnecting...\n\n[Force Stop](command:ros2-studio.stop-retry)",
+        "when": "ros2-studio.isConnecting"
       },
       {
-        "view": "extWelcomeView",
-        "contents": "Welcome to ROS 2 Studio!\n\nReconnecting...\n\n[Force Stop](command:vscode-ros-extension.stop-retry)",
-        "when": "vscode-ros-extension.isReconnecting"
+        "view": "ros2StudioWelcomeView",
+        "contents": "Welcome to ROS 2 Studio!\n\nReconnecting...\n\n[Force Stop](command:ros2-studio.stop-retry)",
+        "when": "ros2-studio.isReconnecting"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "extContainerView",
+          "id": "ros2StudioContainerView",
           "title": "ROS 2 Studio",
           "icon": "media/ros2-studio-logo.svg"
         }
       ]
     },
     "views": {
-      "extContainerView": [
+      "ros2StudioContainerView": [
         {
-          "id": "extWelcomeView",
+          "id": "ros2StudioWelcomeView",
           "name": "ROS 2 Studio",
           "icon": "media/ros2-studio-logo.svg",
-          "when": "!vscode-ros-extension.isConnected"
+          "when": "!ros2-studio.isConnected"
         },
         {
-          "id": "extNodesView",
+          "id": "ros2StudioTopicsView",
           "name": "ROS 2 Topics",
           "icon": "media/ros2-studio-logo.svg",
-          "when": "vscode-ros-extension.isConnected"
+          "when": "ros2-studio.isConnected"
         },
         {
-          "id": "extNodeListView",
+          "id": "ros2StudioNodeListView",
           "name": "ROS 2 Nodes",
           "icon": "media/ros2-studio-logo.svg",
-          "when": "vscode-ros-extension.isConnected"
+          "when": "ros2-studio.isConnected"
         }
       ]
     },
     "menus": {
       "view/title": [
         {
-          "command": "vscode-ros-extension.disconnect-bridge",
-          "when": "view == extNodesView && vscode-ros-extension.isConnected",
+          "command": "ros2-studio.disconnect-bridge",
+          "when": "view == ros2StudioTopicsView && ros2-studio.isConnected",
           "group": "navigation@1"
         },
         {
-          "command": "vscode-ros-extension.force-reset",
-          "when": "view == extNodesView && vscode-ros-extension.isConnected",
+          "command": "ros2-studio.force-reset",
+          "when": "view == ros2StudioTopicsView && ros2-studio.isConnected",
           "group": "navigation@2"
         },
         {
-          "command": "vscode-ros-extension.stop-retry",
-          "when": "view == extNodesView && (vscode-ros-extension.isReconnecting || vscode-ros-extension.isConnecting)",
+          "command": "ros2-studio.stop-retry",
+          "when": "view == ros2StudioTopicsView && (ros2-studio.isReconnecting || ros2-studio.isConnecting)",
           "group": "navigation@3"
         },
         {
-          "command": "vscode-ros-extension.refresh-connections",
-          "when": "view == extNodesView && vscode-ros-extension.isConnected",
+          "command": "ros2-studio.refresh-connections",
+          "when": "view == ros2StudioTopicsView && ros2-studio.isConnected",
           "group": "navigation@4"
         },
         {
-          "command": "vscode-ros-extension.open-bag-recorder",
-          "when": "view == extNodesView && vscode-ros-extension.isConnected",
+          "command": "ros2-studio.open-bag-recorder",
+          "when": "view == ros2StudioTopicsView && ros2-studio.isConnected",
           "group": "navigation@5"
         },
         {
-          "command": "vscode-ros-extension.open-message-inspector",
-          "when": "view == extNodesView && vscode-ros-extension.isConnected",
+          "command": "ros2-studio.open-message-inspector",
+          "when": "view == ros2StudioTopicsView && ros2-studio.isConnected",
           "group": "navigation@6"
         },
         {
-          "command": "vscode-ros-extension.stop-retry",
-          "when": "view == extWelcomeView && (vscode-ros-extension.isReconnecting || vscode-ros-extension.isConnecting)",
+          "command": "ros2-studio.stop-retry",
+          "when": "view == ros2StudioWelcomeView && (ros2-studio.isReconnecting || ros2-studio.isConnecting)",
           "group": "navigation@1"
         },
         {
-          "command": "vscode-ros-extension.disconnect-bridge",
-          "when": "view == extNodeListView && vscode-ros-extension.isConnected",
+          "command": "ros2-studio.disconnect-bridge",
+          "when": "view == ros2StudioNodeListView && ros2-studio.isConnected",
           "group": "navigation@1"
         },
         {
-          "command": "vscode-ros-extension.force-reset",
-          "when": "view == extNodeListView && vscode-ros-extension.isConnected",
+          "command": "ros2-studio.force-reset",
+          "when": "view == ros2StudioNodeListView && ros2-studio.isConnected",
           "group": "navigation@2"
         },
         {
-          "command": "vscode-ros-extension.stop-retry",
-          "when": "view == extNodeListView && (vscode-ros-extension.isReconnecting || vscode-ros-extension.isConnecting)",
+          "command": "ros2-studio.stop-retry",
+          "when": "view == ros2StudioNodeListView && (ros2-studio.isReconnecting || ros2-studio.isConnecting)",
           "group": "navigation@3"
         },
         {
-          "command": "vscode-ros-extension.refresh-connections",
-          "when": "view == extNodeListView && vscode-ros-extension.isConnected",
+          "command": "ros2-studio.refresh-connections",
+          "when": "view == ros2StudioNodeListView && ros2-studio.isConnected",
           "group": "navigation@4"
         },
         {
-          "command": "vscode-ros-extension.open-bag-recorder",
-          "when": "view == extNodeListView && vscode-ros-extension.isConnected",
+          "command": "ros2-studio.open-bag-recorder",
+          "when": "view == ros2StudioNodeListView && ros2-studio.isConnected",
           "group": "navigation@5"
         },
         {
-          "command": "vscode-ros-extension.open-message-inspector",
-          "when": "view == extNodeListView && vscode-ros-extension.isConnected",
+          "command": "ros2-studio.open-message-inspector",
+          "when": "view == ros2StudioNodeListView && ros2-studio.isConnected",
           "group": "navigation@6"
         }
       ],
       "view/item/context": [
         {
-          "command": "vscode-ros-extension.disconnect-bridge",
-          "when": "view == extNodesView && viewItem == nodeTree"
+          "command": "ros2-studio.disconnect-bridge",
+          "when": "view == ros2StudioTopicsView && viewItem == nodeTree"
         },
         {
-          "command": "vscode-ros-extension.add-to-bag-recorder",
-          "when": "view == extNodesView && viewItem == topic"
+          "command": "ros2-studio.add-to-bag-recorder",
+          "when": "view == ros2StudioTopicsView && viewItem == topic"
         },
         {
-          "command": "vscode-ros-extension.subscribe-to-topic",
-          "when": "view == extNodesView && viewItem == topic",
+          "command": "ros2-studio.subscribe-to-topic",
+          "when": "view == ros2StudioTopicsView && viewItem == topic",
           "group": "inline@1"
         },
         {
-          "command": "vscode-ros-extension.unsubscribe-from-topic",
-          "when": "view == extNodesView && viewItem == topicSubscribed",
+          "command": "ros2-studio.unsubscribe-from-topic",
+          "when": "view == ros2StudioTopicsView && viewItem == topicSubscribed",
           "group": "inline@1"
         },
         {
-          "command": "vscode-ros-extension.inspect-topic-from-tree",
-          "when": "view == extNodesView && viewItem == topic",
+          "command": "ros2-studio.inspect-topic-from-tree",
+          "when": "view == ros2StudioTopicsView && viewItem == topic",
           "group": "inline@10"
         },
         {
-          "command": "vscode-ros-extension.inspect-topic-from-tree",
-          "when": "view == extNodesView && viewItem == topicSubscribed",
+          "command": "ros2-studio.inspect-topic-from-tree",
+          "when": "view == ros2StudioTopicsView && viewItem == topicSubscribed",
           "group": "inline@10"
         },
         {
-          "command": "vscode-ros-extension.inspect-topic-message",
-          "when": "view == extNodesView && viewItem == topic"
+          "command": "ros2-studio.inspect-topic-message",
+          "when": "view == ros2StudioTopicsView && viewItem == topic"
         },
         {
-          "command": "vscode-ros-extension.inspect-service-type",
-          "when": "view == extNodesView && viewItem == service",
+          "command": "ros2-studio.inspect-service-type",
+          "when": "view == ros2StudioTopicsView && viewItem == service",
           "group": "inline"
         },
         {
-          "command": "vscode-ros-extension.inspect-action-type",
-          "when": "view == extNodesView && viewItem == actionClient",
+          "command": "ros2-studio.inspect-action-type",
+          "when": "view == ros2StudioTopicsView && viewItem == actionClient",
           "group": "inline"
         },
         {
-          "command": "vscode-ros-extension.get-parameters",
-          "when": "view == extNodeListView && viewItem == node"
+          "command": "ros2-studio.get-parameters",
+          "when": "view == ros2StudioNodeListView && viewItem == node"
         },
         {
-          "command": "vscode-ros-extension.add-to-bag-recorder",
-          "when": "view == extNodeListView && viewItem == publisher"
+          "command": "ros2-studio.add-to-bag-recorder",
+          "when": "view == ros2StudioNodeListView && viewItem == publisher"
         },
         {
-          "command": "vscode-ros-extension.add-to-bag-recorder",
-          "when": "view == extNodeListView && viewItem == subscribers"
+          "command": "ros2-studio.add-to-bag-recorder",
+          "when": "view == ros2StudioNodeListView && viewItem == subscribers"
         },
         {
-          "command": "vscode-ros-extension.inspect-topic-message",
-          "when": "view == extNodeListView && viewItem == publisher",
+          "command": "ros2-studio.inspect-topic-message",
+          "when": "view == ros2StudioNodeListView && viewItem == publisher",
           "group": "inline"
         },
         {
-          "command": "vscode-ros-extension.inspect-topic-message",
-          "when": "view == extNodeListView && viewItem == subscribers",
+          "command": "ros2-studio.inspect-topic-message",
+          "when": "view == ros2StudioNodeListView && viewItem == subscribers",
           "group": "inline"
         },
         {
-          "command": "vscode-ros-extension.inspect-service-type",
-          "when": "view == extNodeListView && viewItem == service",
+          "command": "ros2-studio.inspect-service-type",
+          "when": "view == ros2StudioNodeListView && viewItem == service",
           "group": "inline"
         },
         {
-          "command": "vscode-ros-extension.inspect-action-type",
-          "when": "view == extNodeListView && viewItem == actionClient",
+          "command": "ros2-studio.inspect-action-type",
+          "when": "view == ros2StudioNodeListView && viewItem == actionClient",
           "group": "inline"
         }
       ]
