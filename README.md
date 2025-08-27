@@ -11,8 +11,8 @@ Connect to ROS 2 systems via rosbridge WebSocket protocol directly from VS Code.
 
 - **ROS 2 Entity Discovery** - Browse nodes, topics, services, publishers, and subscribers in a tree view
 - **Topic Subscriptions** - Subscribe/unsubscribe to ROS 2 topics with real-time message display
-- **Service Calls** - Call ROS 2 services with JSON parameters and view responses
 - **WebSocket Connection** - Connect to ROS 2 systems via rosbridge WebSocket protocol
+- **Entity Inspection** - View detailed information about topics, services, and actions with type definitions
 
 ### Advanced Visualization
 
