@@ -187,7 +187,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🏢 About
 
-This extension is developed and maintained by EightVectors. For commercial support and custom development, please contact us at support@eightvectors.com.
+This extension is developed and maintained by [EightVectors](https://www.eightvectors.com/).
 
 ## 🐛 Known Issues
 

@@ -2,21 +2,24 @@
   "name": "ros2-studio",
   "displayName": "ROS 2 Studio",
   "description": "Connect to ROS 2 systems via rosbridge, visualize topics, call services, and interact with ROS 2 nodes directly from VS Code",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "publisher": "eightvectors",
   "icon": "media/ros2-studio-logo.png",
   "galleryBanner": {
     "color": "#1e2327",
     "theme": "dark"
   },
-  "homepage": "https://github.com/Eight-Vectors/ros2-studio#readme",
+  "homepage": "https://github.com/Eight-Vectors/ros2-studio-vscode-plugin#readme",
   "bugs": {
-    "url": "https://github.com/Eight-Vectors/ros2-studio/issues"
+    "url": "https://github.com/Eight-Vectors/ros2-studio-vscode-plugin/issues"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Eight-Vectors/ros2-studio.git"
+    "url": "https://github.com/Eight-Vectors/ros2-studio-vscode-plugin.git"
+  },
+  "resources": {
+    "repository": "https://github.com/Eight-Vectors/ros2-studio-vscode-plugin"
   },
   "keywords": [
     "ros",
@@ -24,7 +27,6 @@
     "rosbridge",
     "robotics",
     "robot",
-    "websocket",
     "visualization",
     "topics",
     "services",
@@ -46,7 +48,6 @@
     "development",
     "middleware",
     "real-time",
-    "point-cloud",
     "3d-visualization",
     "remote-control"
   ],
@@ -55,7 +56,7 @@
   },
   "categories": [
     "Visualization",
-    "Programming Languages",
+    "Debuggers",
     "Other"
   ],
   "activationEvents": [],

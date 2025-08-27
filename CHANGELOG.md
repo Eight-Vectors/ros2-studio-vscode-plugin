@@ -4,7 +4,7 @@ All notable changes to the "ROS 2 Studio" will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [0.3.1] - 2025-08-06
+## [0.3.4] - Initial Release
 
 ### Added
 
@@ -40,6 +40,5 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ### Changed
 
-- Migrated from previous communication method to rosbridge WebSocket protocol
 - Modernized visualization panel UI
 - Enhanced message type detection
