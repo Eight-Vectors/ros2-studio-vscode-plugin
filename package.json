@@ -2,7 +2,7 @@
   "name": "ros2-studio",
   "displayName": "ROS 2 Studio",
   "description": "Connect to ROS 2 systems via rosbridge, visualize topics, call services, and interact with ROS 2 nodes directly from VS Code",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "publisher": "eightvectors",
   "icon": "media/ros2-studio-logo.png",
   "galleryBanner": {

@@ -4,6 +4,11 @@ All notable changes to the "ROS 2 Studio" will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.5] - Terminal Text Update
+
+### Changed
+- Updated terminal output text
+
 ## [0.3.4] - Initial Release
 
 ### Added

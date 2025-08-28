@@ -92,7 +92,7 @@ class RosbridgeClient {
       });
 
       this.eventHandlers.connection = () => {
-        vscode.window.showInformationMessage("Connected to ROS 2 bridge");
+        vscode.window.showInformationMessage("Connected to rosbridge");
         this.reconnectAttempts = 0;
         this.reconnectDelay = 1000;
         this.isReconnecting = false;
@@ -113,7 +113,7 @@ class RosbridgeClient {
         const errorMessage = this.formatError(error);
 
         this.pChannel.appendLine(
-          `ROS 2 bridge connection error: ${errorMessage}`
+          `Rosbridge connection error: ${errorMessage}`
         );
 
         this.pChannel.show(true);
@@ -124,18 +124,18 @@ class RosbridgeClient {
           this.onConnectionStatusChange("disconnected");
         }
 
-        vscode.window.showErrorMessage(`ROS 2 bridge error: ${errorMessage}`);
+        vscode.window.showErrorMessage(`Rosbridge error: ${errorMessage}`);
         reject(error);
       };
 
       this.eventHandlers.close = () => {
         if (this.shouldReconnect) {
           vscode.window.showWarningMessage(
-            "Disconnected from ROS 2 bridge. Attempting to reconnect..."
+            "Disconnected from rosbridge. Attempting to reconnect..."
           );
           this.handleReconnection();
         } else {
-          vscode.window.showWarningMessage("Disconnected from ROS 2 bridge");
+          vscode.window.showWarningMessage("Disconnected from rosbridge");
         }
       };
 
@@ -167,7 +167,7 @@ class RosbridgeClient {
       this.reconnectAttempts >= this.maxReconnectAttempts
     ) {
       vscode.window.showErrorMessage(
-        `Failed to reconnect to ROS 2 bridge after ${this.maxReconnectAttempts} attempts. Please check your rosbridge server.`
+        `Failed to reconnect to rosbridge after ${this.maxReconnectAttempts} attempts. Please check your rosbridge server.`
       );
       this.isReconnecting = false;
       vscode.commands.executeCommand(
@@ -197,7 +197,7 @@ class RosbridgeClient {
         this.connectionPromise = this.connect()
           .then(() => {
             vscode.window.showInformationMessage(
-              "Successfully reconnected to ROS 2 bridge"
+              "Successfully reconnected to rosbridge"
             );
             this.resubscribeTopics();
 

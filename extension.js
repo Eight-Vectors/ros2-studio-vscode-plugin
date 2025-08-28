@@ -258,7 +258,7 @@ function activate(context) {
     const topicMessageRates = new Map();
 
     channels["main"] = vscode.window.createOutputChannel(
-      "ROS 2 Bridge Extension"
+      "ROS 2 Studio"
     );
     outputChannels.set("main", channels["main"]);
 
@@ -805,7 +805,7 @@ function activate(context) {
           }
 
           vscode.window.showInformationMessage(
-            "Force reset complete. You can now connect to a ROS 2 bridge."
+            "Force reset complete. You can now connect to rosbridge."
           );
         }
       ),
@@ -862,7 +862,7 @@ function activate(context) {
         async (treeItem, messageType) => {
           if (!ws || !(ws instanceof RosbridgeClient)) {
             vscode.window.showErrorMessage(
-              "No connection to ROS 2 bridge. Please connect first."
+              "No rosbridge connection available"
             );
             return;
           }
@@ -1079,7 +1079,7 @@ function activate(context) {
         `${extensionHandle}.call-service`,
         async (serviceName) => {
           if (!ws || !ws.isConnected()) {
-            vscode.window.showErrorMessage("Not connected to ROS 2 bridge");
+            vscode.window.showErrorMessage("Not connected to rosbridge");
             return;
           }
 
@@ -1130,7 +1130,7 @@ function activate(context) {
           }
 
           if (!ws || !ws.isConnected()) {
-            vscode.window.showErrorMessage("No active ROS 2 bridge connection");
+            vscode.window.showErrorMessage("No active rosbridge connection");
             return;
           }
 
@@ -1194,7 +1194,7 @@ function activate(context) {
           const topicName = treeItem.label || treeItem.id;
 
           if (!ws || !ws.isConnected()) {
-            vscode.window.showErrorMessage("Not connected to ROS 2 bridge");
+            vscode.window.showErrorMessage("Not connected to rosbridge");
             return;
           }
 
@@ -1227,7 +1227,7 @@ function activate(context) {
           }
 
           if (!ws || !ws.isConnected()) {
-            vscode.window.showErrorMessage("Not connected to ROS 2 bridge");
+            vscode.window.showErrorMessage("Not connected to rosbridge");
             return;
           }
 
@@ -1471,7 +1471,7 @@ function activate(context) {
           }
 
           if (!ws || !ws.isConnected()) {
-            vscode.window.showErrorMessage("Not connected to ROS 2 bridge");
+            vscode.window.showErrorMessage("Not connected to rosbridge");
             return;
           }
 
@@ -1561,7 +1561,7 @@ function activate(context) {
           const serviceName = treeItem.label || treeItem.id;
 
           if (!ws || !ws.isConnected()) {
-            vscode.window.showErrorMessage("Not connected to ROS 2 bridge");
+            vscode.window.showErrorMessage("Not connected to rosbridge");
             return;
           }
 
@@ -1614,7 +1614,7 @@ function activate(context) {
   } catch (error) {
     console.error("Activation error:", error);
     vscode.window.showErrorMessage(
-      `Failed to activate ROS 2 Bridge Extension: ${error.message}`
+      `Failed to activate extension: ${error.message}`
     );
     throw error;
   }
