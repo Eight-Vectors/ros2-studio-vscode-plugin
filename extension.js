@@ -81,7 +81,7 @@ function updateTopicMessageRate(topicName, topicRates) {
 }
 
 function isStaticTopic(topicName, messageType, topicRates) {
-  const config = vscode.workspace.getConfiguration("ros2-studio");
+  const config = vscode.workspace.getConfiguration(extensionHandle);
 
   const staticTopics = config.get("staticTopics", [
     "/robot_description",
@@ -241,12 +241,12 @@ function activate(context) {
   try {
     vscode.commands.executeCommand(
       "setContext",
-      "ros2-studio.isConnected",
+      `${extensionHandle}.isConnected`,
       false
     );
     vscode.commands.executeCommand(
       "setContext",
-      "ros2-studio.isConnecting",
+      `${extensionHandle}.isConnecting`,
       false
     );
 
@@ -258,7 +258,7 @@ function activate(context) {
     const topicMessageRates = new Map();
 
     channels["main"] = vscode.window.createOutputChannel(
-      "ROS 2 Studio"
+      "Eight Vectors Studio"
     );
     outputChannels.set("main", channels["main"]);
 
@@ -270,16 +270,16 @@ function activate(context) {
       extensionHandle,
       channels["main"]
     );
-    vscode.window.registerTreeDataProvider("ros2StudioTopicsView", tree);
+    vscode.window.registerTreeDataProvider("eightVectorsStudioTopicsView", tree);
 
     let nodeTree = new NodeListProvider(
       bridge,
       extensionHandle,
       channels["main"]
     );
-    vscode.window.registerTreeDataProvider("ros2StudioNodeListView", nodeTree);
+    vscode.window.registerTreeDataProvider("eightVectorsStudioNodeListView", nodeTree);
 
-    vscode.window.registerTreeDataProvider("ros2StudioWelcomeView", {
+    vscode.window.registerTreeDataProvider("eightVectorsStudioWelcomeView", {
       getTreeItem: () => null,
       getChildren: () => [],
     });
@@ -364,17 +364,17 @@ function activate(context) {
 
               vscode.commands.executeCommand(
                 "setContext",
-                "ros2-studio.isConnecting",
+                `${extensionHandle}.isConnecting`,
                 true
               );
             vscode.commands.executeCommand(
               "setContext",
-              "ros2-studio.isConnected",
+              `${extensionHandle}.isConnected`,
               false
             );
             vscode.commands.executeCommand(
               "setContext",
-              "ros2-studio.isReconnecting",
+              `${extensionHandle}.isReconnecting`,
               false
             );
 
@@ -397,68 +397,68 @@ function activate(context) {
                   case "connecting":
                     vscode.commands.executeCommand(
                       "setContext",
-                      "ros2-studio.isConnecting",
+                      `${extensionHandle}.isConnecting`,
                       true
                     );
                     vscode.commands.executeCommand(
                       "setContext",
-                      "ros2-studio.isConnected",
+                      `${extensionHandle}.isConnected`,
                       false
                     );
                     vscode.commands.executeCommand(
                       "setContext",
-                      "ros2-studio.isReconnecting",
+                      `${extensionHandle}.isReconnecting`,
                       false
                     );
                     break;
                   case "connected":
                     vscode.commands.executeCommand(
                       "setContext",
-                      "ros2-studio.isConnecting",
+                      `${extensionHandle}.isConnecting`,
                       false
                     );
                     vscode.commands.executeCommand(
                       "setContext",
-                      "ros2-studio.isConnected",
+                      `${extensionHandle}.isConnected`,
                       true
                     );
                     vscode.commands.executeCommand(
                       "setContext",
-                      "ros2-studio.isReconnecting",
+                      `${extensionHandle}.isReconnecting`,
                       false
                     );
                     break;
                   case "reconnecting":
                     vscode.commands.executeCommand(
                       "setContext",
-                      "ros2-studio.isConnecting",
+                      `${extensionHandle}.isConnecting`,
                       false
                     );
                     vscode.commands.executeCommand(
                       "setContext",
-                      "ros2-studio.isConnected",
+                      `${extensionHandle}.isConnected`,
                       false
                     );
                     vscode.commands.executeCommand(
                       "setContext",
-                      "ros2-studio.isReconnecting",
+                      `${extensionHandle}.isReconnecting`,
                       true
                     );
                     break;
                   case "disconnected":
                     vscode.commands.executeCommand(
                       "setContext",
-                      "ros2-studio.isConnecting",
+                      `${extensionHandle}.isConnecting`,
                       false
                     );
                     vscode.commands.executeCommand(
                       "setContext",
-                      "ros2-studio.isConnected",
+                      `${extensionHandle}.isConnected`,
                       false
                     );
                     vscode.commands.executeCommand(
                       "setContext",
-                      "ros2-studio.isReconnecting",
+                      `${extensionHandle}.isReconnecting`,
                       false
                     );
                     break;
@@ -470,7 +470,7 @@ function activate(context) {
               .then(() => {
                 vscode.commands.executeCommand(
                   "setContext",
-                  "ros2-studio.isConnected",
+                  `${extensionHandle}.isConnected`,
                   true
                 );
                 tree.refresh();
@@ -578,17 +578,17 @@ function activate(context) {
 
                 vscode.commands.executeCommand(
                   "setContext",
-                  "ros2-studio.isConnecting",
+                  `${extensionHandle}.isConnecting`,
                   false
                 );
                 vscode.commands.executeCommand(
                   "setContext",
-                  "ros2-studio.isConnected",
+                  `${extensionHandle}.isConnected`,
                   false
                 );
                 vscode.commands.executeCommand(
                   "setContext",
-                  "ros2-studio.isReconnecting",
+                  `${extensionHandle}.isReconnecting`,
                   false
                 );
 
@@ -693,17 +693,17 @@ function activate(context) {
 
           vscode.commands.executeCommand(
             "setContext",
-            "ros2-studio.isConnected",
+            `${extensionHandle}.isConnected`,
             false
           );
           vscode.commands.executeCommand(
             "setContext",
-            "ros2-studio.isConnecting",
+            `${extensionHandle}.isConnecting`,
             false
           );
           vscode.commands.executeCommand(
             "setContext",
-            "ros2-studio.isReconnecting",
+            `${extensionHandle}.isReconnecting`,
             false
           );
         }
@@ -762,17 +762,17 @@ function activate(context) {
 
           vscode.commands.executeCommand(
             "setContext",
-            "ros2-studio.isConnecting",
+            `${extensionHandle}.isConnecting`,
             false
           );
           vscode.commands.executeCommand(
             "setContext",
-            "ros2-studio.isConnected",
+            `${extensionHandle}.isConnected`,
             false
           );
           vscode.commands.executeCommand(
             "setContext",
-            "ros2-studio.isReconnecting",
+            `${extensionHandle}.isReconnecting`,
             false
           );
 
@@ -833,17 +833,17 @@ function activate(context) {
 
           vscode.commands.executeCommand(
             "setContext",
-            "ros2-studio.isConnecting",
+            `${extensionHandle}.isConnecting`,
             false
           );
           vscode.commands.executeCommand(
             "setContext",
-            "ros2-studio.isReconnecting",
+            `${extensionHandle}.isReconnecting`,
             false
           );
           vscode.commands.executeCommand(
             "setContext",
-            "ros2-studio.isConnected",
+            `${extensionHandle}.isConnected`,
             false
           );
 

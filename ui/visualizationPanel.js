@@ -84,7 +84,7 @@ class VisualizationPanel {
 
       const panel = vscode.window.createWebviewPanel(
         VisualizationPanel.viewType,
-        `ROS 2 Visualization: ${topicName}`,
+        `Visualization: ${topicName}`,
         column || vscode.ViewColumn.One,
         {
           enableScripts: true,
@@ -196,29 +196,34 @@ class VisualizationPanel {
 
   updateData(data) {
     const now = Date.now();
-    
+
     // Throttle updates to prevent overwhelming the webview
     if (now - this._lastUpdateTime < this._updateThrottle) {
       return;
     }
     this._lastUpdateTime = now;
-    
+
     // For large data, create a shallow copy to avoid memory leaks
     this._rawData = JSON.parse(JSON.stringify(data));
-    
+
     // Limit data history to prevent memory growth
     if (this._dataHistory.length >= this._dataHistoryLimit) {
       this._dataHistory.shift(); // Remove oldest entry
     }
-    
+
     // Store only essential data in history
     const historyEntry = {
       timestamp: now,
-      data: this._messageType === 'OccupancyGrid' ? 
-        { info: data.info, dataLength: data.data?.length } : 
-        this._messageType === 'LaserScan' ?
-        { angle_min: data.angle_min, angle_max: data.angle_max, rangesLength: data.ranges?.length } :
-        data
+      data:
+        this._messageType === "OccupancyGrid"
+          ? { info: data.info, dataLength: data.data?.length }
+          : this._messageType === "LaserScan"
+          ? {
+              angle_min: data.angle_min,
+              angle_max: data.angle_max,
+              rangesLength: data.ranges?.length,
+            }
+          : data,
     };
     this._dataHistory.push(historyEntry);
 
@@ -242,15 +247,15 @@ class VisualizationPanel {
     const panelKey = `${this._topicName}_${this._messageType}`;
     VisualizationPanel.currentPanels.delete(panelKey);
     VisualizationPanel.pendingPanels.delete(panelKey);
-    
+
     // Clear data to free memory
     this._rawData = null;
     this._dataHistory = [];
-    
+
     // Clean up webview
     if (this._panel && this._panel.webview) {
       this._panel.webview.postMessage({
-        command: "cleanup"
+        command: "cleanup",
       });
     }
 
@@ -270,7 +275,7 @@ class VisualizationPanel {
     <html lang="en">
     <head>
       <meta charset="UTF-8">
-      <title>ROS 2 Visualization: ${this._topicName}</title>
+      <title>Visualization: ${this._topicName}</title>
       <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
       <style>

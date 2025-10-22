@@ -1,6 +1,6 @@
-# ROS 2 Studio
+# Eight Vectors Studio
 
-[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/eightvectors.ros2-studio)](https://marketplace.visualstudio.com/items?itemName=eightvectors.ros2-studio)
+[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/eightvectors.eight-vectors-studio)](https://marketplace.visualstudio.com/items?itemName=eightvectors.eight-vectors-studio)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Connect to ROS 2 systems via rosbridge WebSocket protocol directly from VS Code. Visualize topics, call services, and interact with ROS 2 nodes without leaving your development environment.
@@ -46,7 +46,7 @@ Connect to ROS 2 systems via rosbridge WebSocket protocol directly from VS Code.
 
 1. Open VS Code
 2. Go to Extensions (Ctrl+Shift+X)
-3. Search for "ROS 2 Studio"
+3. Search for "Eight Vectors Studio"
 4. Click Install
 
 ## ⚙️ Configuration
@@ -55,7 +55,7 @@ Connect to ROS 2 systems via rosbridge WebSocket protocol directly from VS Code.
 
 | Setting                    | Description             | Default               |
 | -------------------------- | ----------------------- | --------------------- |
-| `ros2-studio.rosbridgeUrl` | Rosbridge WebSocket URL | `ws://localhost:9090` |
+| `eight-vectors-studio.rosbridgeUrl` | Rosbridge WebSocket URL | `ws://localhost:9090` |
 
 ### Available Commands
 
@@ -83,11 +83,11 @@ Connect to ROS 2 systems via rosbridge WebSocket protocol directly from VS Code.
 
 2. **Connect to ROS 2**:
 
-   - Click the robot icon in the activity bar
+   - Click the Eight Vectors icon in the activity bar
    - Click "Connect" or use Command Palette: `Connect to Remote`
    - Default connection is `ws://localhost:9090`
 
-   ![Connect to ROS 2 Studio](https://eight-vectors.github.io/ros2-studio-extension-assets/gifs/connect-rosbridge.gif)
+   ![Connect to Eight Vectors Studio](https://eight-vectors.github.io/ros2-studio-extension-assets/gifs/connect-rosbridge.gif)
 
 3. **Browse ROS 2 entities**:
 
@@ -196,3 +196,4 @@ This extension is developed and maintained by [EightVectors](https://www.eightve
 ## 📮 Support
 
 For issues and feature requests, please use the [GitHub issue tracker](https://github.com/Eight-Vectors/ros2-studio-vscode-plugin/issues).
+

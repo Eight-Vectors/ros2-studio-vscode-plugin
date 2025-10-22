@@ -1,10 +1,25 @@
 # Change Log
 
-All notable changes to the "ROS 2 Studio" will be documented in this file.
+All notable changes to **Eight Vectors Studio** are documented here. This project follows [Keep a Changelog](http://keepachangelog.com/) and [Semantic Versioning](https://semver.org/).
 
-The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [0.3.5] - Terminal Text Update
+## [0.3.8] – Metadata Update
+
+### Changed
+
+- Updated metadata
+
+---
+
+## [0.3.7] – Rebrand, Rename & Docs Refresh
+
+### Changed
+
+- Renamed the extension
+
+---
+
+## [0.3.6] – Transitional Rename
 
 ### Changed
 - Updated terminal output text
@@ -13,7 +28,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ### Added
 
-- Initial release of ROS 2 Studio Extension
+- Initial release of  Studio Extension
 - ROS 2 entity discovery (nodes, topics, services, publishers, subscribers)
 - Topic subscription/unsubscription with real-time message display
 - Advanced visualization support:

@@ -1,10 +1,10 @@
 {
-  "name": "ros2-studio",
-  "displayName": "ROS 2 Studio",
+  "name": "eight-vectors-studio",
+  "displayName": "Eight Vectors Studio",
   "description": "Connect to ROS 2 systems via rosbridge, visualize topics, call services, and interact with ROS 2 nodes directly from VS Code",
-  "version": "0.3.5",
+  "version": "0.3.8",
   "publisher": "eightvectors",
-  "icon": "media/ros2-studio-logo.png",
+  "icon": "media/evs-logo.png",
   "galleryBanner": {
     "color": "#1e2327",
     "theme": "dark"
@@ -22,9 +22,6 @@
     "repository": "https://github.com/Eight-Vectors/ros2-studio-vscode-plugin"
   },
   "keywords": [
-    "ros",
-    "ros2",
-    "rosbridge",
     "robotics",
     "robot",
     "visualization",
@@ -40,11 +37,8 @@
     "urdf",
     "occupancy-grid",
     "bag",
-    "rosbag",
-    "ros-bag",
     "publisher",
     "subscriber",
-    "rosapi",
     "development",
     "middleware",
     "real-time",
@@ -64,82 +58,82 @@
   "contributes": {
     "commands": [
       {
-        "command": "ros2-studio.connect-bridge",
+        "command": "eight-vectors-studio.connect-bridge",
         "title": "Connect to Remote"
       },
       {
-        "command": "ros2-studio.force-reset",
+        "command": "eight-vectors-studio.force-reset",
         "title": "Force Reset Connection",
         "icon": "$(debug-restart)"
       },
       {
-        "command": "ros2-studio.stop-retry",
+        "command": "eight-vectors-studio.stop-retry",
         "title": "Force Stop Connection",
         "icon": "$(stop)"
       },
       {
-        "command": "ros2-studio.disconnect-bridge",
+        "command": "eight-vectors-studio.disconnect-bridge",
         "title": "Disconnect",
         "icon": "$(debug-disconnect)"
       },
       {
-        "command": "ros2-studio.refresh-connections",
+        "command": "eight-vectors-studio.refresh-connections",
         "title": "Refresh connection",
         "icon": "$(refresh)"
       },
       {
-        "command": "ros2-studio.toggle-subscription",
+        "command": "eight-vectors-studio.toggle-subscription",
         "title": "Subscribe"
       },
       {
-        "command": "ros2-studio.subscribe-to-topic",
+        "command": "eight-vectors-studio.subscribe-to-topic",
         "title": "Subscribe"
       },
       {
-        "command": "ros2-studio.unsubscribe-from-topic",
+        "command": "eight-vectors-studio.unsubscribe-from-topic",
         "title": "Unsubscribe"
       },
       {
-        "command": "ros2-studio.get-parameters",
+        "command": "eight-vectors-studio.get-parameters",
         "title": "Get Parameters",
         "icon": "$(settings-gear)"
       },
       {
-        "command": "ros2-studio.reset-visualization-preference",
+        "command": "eight-vectors-studio.reset-visualization-preference",
         "title": "Reset Visualization View Mode Preference"
       },
       {
-        "command": "ros2-studio.add-to-bag-recorder",
+        "command": "eight-vectors-studio.add-to-bag-recorder",
         "title": "Add to Bag Recorder",
         "icon": "$(record)"
       },
       {
-        "command": "ros2-studio.open-bag-recorder",
-        "title": "Open ROS2 Bag Recorder",
+        "command": "eight-vectors-studio.open-bag-recorder",
+        "title": "Open Bag Recorder",
         "icon": "$(record)"
       },
       {
-        "command": "ros2-studio.open-message-inspector",
+        "command": "eight-vectors-studio.open-message-inspector",
         "title": "Open Message/Service Inspector",
         "icon": "$(symbol-interface)"
       },
       {
-        "command": "ros2-studio.inspect-topic-message",
+        "command": "eight-vectors-studio.inspect-topic-message",
         "title": "Inspect Message Type",
         "icon": "$(info)"
       },
       {
-        "command": "ros2-studio.inspect-topic-from-tree",
+        "command": "eight-vectors-studio.inspect-topic-from-tree",
         "title": "Inspect",
         "icon": "$(info)"
       },
       {
-        "command": "ros2-studio.inspect-service-type",
+        "command": "eight-vectors-studio.inspect-service-type",
         "title": "Inspect Service Type",
         "icon": "$(info)"
       },
       {
-        "command": "ros2-studio.inspect-action-type",
+        "command": "eight-vectors-studio.inspect-action-type",
         "title": "Inspect Action Type",
         "icon": "$(info)"
       }
@@ -148,71 +142,71 @@
       "type": "object",
       "title": "Extension Configuration",
       "properties": {
-        "ros2-studio.rosbridgeUrl": {
+        "eight-vectors-studio.rosbridgeUrl": {
           "type": "string",
           "default": "ws://localhost:9090",
           "description": "Rosbridge WebSocket URL"
         },
-        "ros2-studio.remoteBagPath": {
+        "eight-vectors-studio.remoteBagPath": {
           "type": "string",
           "default": "/home/ros/bags",
           "description": "Default directory path on the remote ROS 2 machine for saving bag files"
         },
-        "ros2-studio.messageThrottleRate": {
+        "eight-vectors-studio.messageThrottleRate": {
           "type": "number",
           "default": 100,
           "minimum": 0,
           "maximum": 1000,
           "description": "Minimum milliseconds between message updates (0 to disable throttling)"
         },
-        "ros2-studio.maxMessageBufferSize": {
+        "eight-vectors-studio.maxMessageBufferSize": {
           "type": "number",
           "default": 100,
           "minimum": 10,
           "maximum": 1000,
           "description": "Maximum number of messages to keep in buffer per topic"
         },
-        "ros2-studio.maxMessageDisplayLength": {
+        "eight-vectors-studio.maxMessageDisplayLength": {
           "type": "number",
           "default": 2000,
           "minimum": 500,
           "maximum": 10000,
           "description": "Maximum characters to display for unknown message types"
         },
-        "ros2-studio.showFullDataForKnownTypes": {
+        "eight-vectors-studio.showFullDataForKnownTypes": {
           "type": "boolean",
           "default": true,
           "description": "Show full data arrays for known types like LaserScan ranges (may impact performance)"
         },
-        "ros2-studio.maxOutputLines": {
+        "eight-vectors-studio.maxOutputLines": {
           "type": "number",
           "default": 500,
           "minimum": 100,
           "maximum": 2000,
           "description": "Maximum lines to keep in output channel before clearing (prevents memory issues)"
         },
-        "ros2-studio.maxMessagesToRetain": {
+        "eight-vectors-studio.maxMessagesToRetain": {
           "type": "number",
           "default": 10,
           "minimum": 1,
           "maximum": 100,
           "description": "Maximum number of messages to retain per topic (prevents memory issues for infrequent topics)"
         },
-        "ros2-studio.maxMemoryMB": {
+        "eight-vectors-studio.maxMemoryMB": {
           "type": "number",
           "default": 1,
           "minimum": 0.1,
           "maximum": 10,
           "description": "Maximum memory (in MB) allowed for message buffer per topic before trimming old messages"
         },
-        "ros2-studio.maxReconnectAttempts": {
+        "eight-vectors-studio.maxReconnectAttempts": {
           "type": "number",
           "default": 10,
           "minimum": 0,
           "maximum": 100,
           "description": "Maximum number of reconnection attempts before giving up (0 = infinite)"
         },
-        "ros2-studio.staticTopics": {
+        "eight-vectors-studio.staticTopics": {
           "type": "array",
           "default": [
             "/robot_description",
@@ -225,7 +219,7 @@
             "type": "string"
           }
         },
-        "ros2-studio.staticTopicPatterns": {
+        "eight-vectors-studio.staticTopicPatterns": {
           "type": "array",
           "default": [
             ".*_static$",
@@ -237,7 +231,7 @@
             "type": "string"
           }
         },
-        "ros2-studio.staticMessageTypes": {
+        "eight-vectors-studio.staticMessageTypes": {
           "type": "array",
           "default": [
             ".*Parameter.*",
@@ -248,7 +242,7 @@
             "type": "string"
           }
         },
-        "ros2-studio.staticTopicAutoDetectRate": {
+        "eight-vectors-studio.staticTopicAutoDetectRate": {
           "type": "number",
           "default": 0.1,
           "minimum": 0.01,
@@ -260,193 +254,193 @@
     "keybindings": [],
     "viewsWelcome": [
       {
-        "view": "ros2StudioWelcomeView",
-        "contents": "Welcome to ROS 2 Studio!\n\n[Connect](command:ros2-studio.connect-bridge)",
-        "when": "!ros2-studio.isConnecting && !ros2-studio.isReconnecting"
+        "view": "eightVectorsStudioWelcomeView",
+        "contents": "Welcome to Eight Vectors Studio!\n\n[Connect](command:eight-vectors-studio.connect-bridge)",
+        "when": "!eight-vectors-studio.isConnecting && !eight-vectors-studio.isReconnecting"
       },
       {
-        "view": "ros2StudioWelcomeView",
-        "contents": "Welcome to ROS 2 Studio!\n\nConnecting...\n\n[Force Stop](command:ros2-studio.stop-retry)",
-        "when": "ros2-studio.isConnecting"
+        "view": "eightVectorsStudioWelcomeView",
+        "contents": "Welcome to Eight Vectors Studio!\n\nConnecting...\n\n[Force Stop](command:eight-vectors-studio.stop-retry)",
+        "when": "eight-vectors-studio.isConnecting"
       },
       {
-        "view": "ros2StudioWelcomeView",
-        "contents": "Welcome to ROS 2 Studio!\n\nReconnecting...\n\n[Force Stop](command:ros2-studio.stop-retry)",
-        "when": "ros2-studio.isReconnecting"
+        "view": "eightVectorsStudioWelcomeView",
+        "contents": "Welcome to Eight Vectors Studio!\n\nReconnecting...\n\n[Force Stop](command:eight-vectors-studio.stop-retry)",
+        "when": "eight-vectors-studio.isReconnecting"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "ros2StudioContainerView",
-          "title": "ROS 2 Studio",
-          "icon": "media/ros2-studio-logo.png"
+          "id": "eightVectorsStudioContainerView",
+          "title": "Eight Vectors Studio",
+          "icon": "media/evs-logo.png"
         }
       ]
     },
     "views": {
-      "ros2StudioContainerView": [
+      "eightVectorsStudioContainerView": [
         {
-          "id": "ros2StudioWelcomeView",
-          "name": "ROS 2 Studio",
-          "icon": "media/ros2-studio-logo.png",
-          "when": "!ros2-studio.isConnected"
+          "id": "eightVectorsStudioWelcomeView",
+          "name": "Eight Vectors Studio",
+          "icon": "media/evs-logo.png",
+          "when": "!eight-vectors-studio.isConnected"
         },
         {
-          "id": "ros2StudioTopicsView",
-          "name": "ROS 2 Topics",
-          "icon": "media/ros2-studio-logo.png",
-          "when": "ros2-studio.isConnected"
+          "id": "eightVectorsStudioTopicsView",
+          "name": "Topics",
+          "icon": "media/evs-logo.png",
+          "when": "eight-vectors-studio.isConnected"
         },
         {
-          "id": "ros2StudioNodeListView",
-          "name": "ROS 2 Nodes",
-          "icon": "media/ros2-studio-logo.png",
-          "when": "ros2-studio.isConnected"
+          "id": "eightVectorsStudioNodeListView",
+          "name": "Nodes",
+          "icon": "media/evs-logo.png",
+          "when": "eight-vectors-studio.isConnected"
         }
       ]
     },
     "menus": {
       "view/title": [
         {
-          "command": "ros2-studio.disconnect-bridge",
-          "when": "view == ros2StudioTopicsView && ros2-studio.isConnected",
+          "command": "eight-vectors-studio.disconnect-bridge",
+          "when": "view == eightVectorsStudioTopicsView && eight-vectors-studio.isConnected",
           "group": "navigation@1"
         },
         {
-          "command": "ros2-studio.force-reset",
-          "when": "view == ros2StudioTopicsView && ros2-studio.isConnected",
+          "command": "eight-vectors-studio.force-reset",
+          "when": "view == eightVectorsStudioTopicsView && eight-vectors-studio.isConnected",
           "group": "navigation@2"
         },
         {
-          "command": "ros2-studio.stop-retry",
-          "when": "view == ros2StudioTopicsView && (ros2-studio.isReconnecting || ros2-studio.isConnecting)",
+          "command": "eight-vectors-studio.stop-retry",
+          "when": "view == eightVectorsStudioTopicsView && (eight-vectors-studio.isReconnecting || eight-vectors-studio.isConnecting)",
           "group": "navigation@3"
         },
         {
-          "command": "ros2-studio.refresh-connections",
-          "when": "view == ros2StudioTopicsView && ros2-studio.isConnected",
+          "command": "eight-vectors-studio.refresh-connections",
+          "when": "view == eightVectorsStudioTopicsView && eight-vectors-studio.isConnected",
           "group": "navigation@4"
         },
         {
-          "command": "ros2-studio.open-bag-recorder",
-          "when": "view == ros2StudioTopicsView && ros2-studio.isConnected",
+          "command": "eight-vectors-studio.open-bag-recorder",
+          "when": "view == eightVectorsStudioTopicsView && eight-vectors-studio.isConnected",
           "group": "navigation@5"
         },
         {
-          "command": "ros2-studio.open-message-inspector",
-          "when": "view == ros2StudioTopicsView && ros2-studio.isConnected",
+          "command": "eight-vectors-studio.open-message-inspector",
+          "when": "view == eightVectorsStudioTopicsView && eight-vectors-studio.isConnected",
           "group": "navigation@6"
         },
         {
-          "command": "ros2-studio.stop-retry",
-          "when": "view == ros2StudioWelcomeView && (ros2-studio.isReconnecting || ros2-studio.isConnecting)",
+          "command": "eight-vectors-studio.stop-retry",
+          "when": "view == eightVectorsStudioWelcomeView && (eight-vectors-studio.isReconnecting || eight-vectors-studio.isConnecting)",
           "group": "navigation@1"
         },
         {
-          "command": "ros2-studio.disconnect-bridge",
-          "when": "view == ros2StudioNodeListView && ros2-studio.isConnected",
+          "command": "eight-vectors-studio.disconnect-bridge",
+          "when": "view == eightVectorsStudioNodeListView && eight-vectors-studio.isConnected",
           "group": "navigation@1"
         },
         {
-          "command": "ros2-studio.force-reset",
-          "when": "view == ros2StudioNodeListView && ros2-studio.isConnected",
+          "command": "eight-vectors-studio.force-reset",
+          "when": "view == eightVectorsStudioNodeListView && eight-vectors-studio.isConnected",
           "group": "navigation@2"
         },
         {
-          "command": "ros2-studio.stop-retry",
-          "when": "view == ros2StudioNodeListView && (ros2-studio.isReconnecting || ros2-studio.isConnecting)",
+          "command": "eight-vectors-studio.stop-retry",
+          "when": "view == eightVectorsStudioNodeListView && (eight-vectors-studio.isReconnecting || eight-vectors-studio.isConnecting)",
           "group": "navigation@3"
         },
         {
-          "command": "ros2-studio.refresh-connections",
-          "when": "view == ros2StudioNodeListView && ros2-studio.isConnected",
+          "command": "eight-vectors-studio.refresh-connections",
+          "when": "view == eightVectorsStudioNodeListView && eight-vectors-studio.isConnected",
           "group": "navigation@4"
         },
         {
-          "command": "ros2-studio.open-bag-recorder",
-          "when": "view == ros2StudioNodeListView && ros2-studio.isConnected",
+          "command": "eight-vectors-studio.open-bag-recorder",
+          "when": "view == eightVectorsStudioNodeListView && eight-vectors-studio.isConnected",
           "group": "navigation@5"
         },
         {
-          "command": "ros2-studio.open-message-inspector",
-          "when": "view == ros2StudioNodeListView && ros2-studio.isConnected",
+          "command": "eight-vectors-studio.open-message-inspector",
+          "when": "view == eightVectorsStudioNodeListView && eight-vectors-studio.isConnected",
           "group": "navigation@6"
         }
       ],
       "view/item/context": [
         {
-          "command": "ros2-studio.disconnect-bridge",
-          "when": "view == ros2StudioTopicsView && viewItem == nodeTree"
+          "command": "eight-vectors-studio.disconnect-bridge",
+          "when": "view == eightVectorsStudioTopicsView && viewItem == nodeTree"
         },
         {
-          "command": "ros2-studio.add-to-bag-recorder",
-          "when": "view == ros2StudioTopicsView && viewItem == topic"
+          "command": "eight-vectors-studio.add-to-bag-recorder",
+          "when": "view == eightVectorsStudioTopicsView && viewItem == topic"
         },
         {
-          "command": "ros2-studio.subscribe-to-topic",
-          "when": "view == ros2StudioTopicsView && viewItem == topic",
+          "command": "eight-vectors-studio.subscribe-to-topic",
+          "when": "view == eightVectorsStudioTopicsView && viewItem == topic",
           "group": "inline@1"
         },
         {
-          "command": "ros2-studio.unsubscribe-from-topic",
-          "when": "view == ros2StudioTopicsView && viewItem == topicSubscribed",
+          "command": "eight-vectors-studio.unsubscribe-from-topic",
+          "when": "view == eightVectorsStudioTopicsView && viewItem == topicSubscribed",
           "group": "inline@1"
         },
         {
-          "command": "ros2-studio.inspect-topic-from-tree",
-          "when": "view == ros2StudioTopicsView && viewItem == topic",
+          "command": "eight-vectors-studio.inspect-topic-from-tree",
+          "when": "view == eightVectorsStudioTopicsView && viewItem == topic",
           "group": "inline@10"
         },
         {
-          "command": "ros2-studio.inspect-topic-from-tree",
-          "when": "view == ros2StudioTopicsView && viewItem == topicSubscribed",
+          "command": "eight-vectors-studio.inspect-topic-from-tree",
+          "when": "view == eightVectorsStudioTopicsView && viewItem == topicSubscribed",
           "group": "inline@10"
         },
         {
-          "command": "ros2-studio.inspect-topic-message",
-          "when": "view == ros2StudioTopicsView && viewItem == topic"
+          "command": "eight-vectors-studio.inspect-topic-message",
+          "when": "view == eightVectorsStudioTopicsView && viewItem == topic"
         },
         {
-          "command": "ros2-studio.inspect-service-type",
-          "when": "view == ros2StudioTopicsView && viewItem == service",
+          "command": "eight-vectors-studio.inspect-service-type",
+          "when": "view == eightVectorsStudioTopicsView && viewItem == service",
           "group": "inline"
         },
         {
-          "command": "ros2-studio.inspect-action-type",
-          "when": "view == ros2StudioTopicsView && viewItem == actionClient",
+          "command": "eight-vectors-studio.inspect-action-type",
+          "when": "view == eightVectorsStudioTopicsView && viewItem == actionClient",
           "group": "inline"
         },
         {
-          "command": "ros2-studio.get-parameters",
-          "when": "view == ros2StudioNodeListView && viewItem == node"
+          "command": "eight-vectors-studio.get-parameters",
+          "when": "view == eightVectorsStudioNodeListView && viewItem == node"
         },
         {
-          "command": "ros2-studio.add-to-bag-recorder",
-          "when": "view == ros2StudioNodeListView && viewItem == publisher"
+          "command": "eight-vectors-studio.add-to-bag-recorder",
+          "when": "view == eightVectorsStudioNodeListView && viewItem == publisher"
         },
         {
-          "command": "ros2-studio.add-to-bag-recorder",
-          "when": "view == ros2StudioNodeListView && viewItem == subscribers"
+          "command": "eight-vectors-studio.add-to-bag-recorder",
+          "when": "view == eightVectorsStudioNodeListView && viewItem == subscribers"
         },
         {
-          "command": "ros2-studio.inspect-topic-message",
-          "when": "view == ros2StudioNodeListView && viewItem == publisher",
+          "command": "eight-vectors-studio.inspect-topic-message",
+          "when": "view == eightVectorsStudioNodeListView && viewItem == publisher",
           "group": "inline"
         },
         {
-          "command": "ros2-studio.inspect-topic-message",
-          "when": "view == ros2StudioNodeListView && viewItem == subscribers",
+          "command": "eight-vectors-studio.inspect-topic-message",
+          "when": "view == eightVectorsStudioNodeListView && viewItem == subscribers",
           "group": "inline"
         },
         {
-          "command": "ros2-studio.inspect-service-type",
-          "when": "view == ros2StudioNodeListView && viewItem == service",
+          "command": "eight-vectors-studio.inspect-service-type",
+          "when": "view == eightVectorsStudioNodeListView && viewItem == service",
           "group": "inline"
         },
         {
-          "command": "ros2-studio.inspect-action-type",
-          "when": "view == ros2StudioNodeListView && viewItem == actionClient",
+          "command": "eight-vectors-studio.inspect-action-type",
+          "when": "view == eightVectorsStudioNodeListView && viewItem == actionClient",
           "group": "inline"
         }
       ]
@@ -472,3 +466,4 @@
     "roslib": "^1.4.1"
   }
 }
+

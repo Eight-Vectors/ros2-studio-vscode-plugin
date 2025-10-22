@@ -13,7 +13,7 @@ class MessageInspectorPanel {
     } else {
       const panel = vscode.window.createWebviewPanel(
         "rosMessageInspector",
-        "ROS 2 Message/Service Inspector",
+        "Message/Service Inspector",
         column || vscode.ViewColumn.One,
         {
           enableScripts: true,
@@ -38,9 +38,13 @@ class MessageInspectorPanel {
     this._update();
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
-    vscode.window.onDidChangeActiveColorTheme(() => {
-      this._update();
-    }, null, this._disposables);
+    vscode.window.onDidChangeActiveColorTheme(
+      () => {
+        this._update();
+      },
+      null,
+      this._disposables
+    );
 
     this._panel.webview.onDidReceiveMessage(
       (message) => {
@@ -74,7 +78,9 @@ class MessageInspectorPanel {
   _inspectMessageType(messageType) {
     this._rosbridgeClient.getMessageDetails(messageType, (details, error) => {
       if (error) {
-        vscode.window.showErrorMessage(`Failed to get message details: ${error}`);
+        vscode.window.showErrorMessage(
+          `Failed to get message details: ${error}`
+        );
         return;
       }
 
@@ -87,31 +93,41 @@ class MessageInspectorPanel {
   }
 
   _inspectServiceType(serviceType) {
-    this._rosbridgeClient.getServiceRequestDetails(serviceType, (requestDetails, reqError) => {
-      if (reqError) {
-        vscode.window.showErrorMessage(`Failed to get service request details: ${reqError}`);
-        return;
-      }
-
-      this._rosbridgeClient.getServiceResponseDetails(serviceType, (responseDetails, resError) => {
-        if (resError) {
-          vscode.window.showErrorMessage(`Failed to get service response details: ${resError}`);
+    this._rosbridgeClient.getServiceRequestDetails(
+      serviceType,
+      (requestDetails, reqError) => {
+        if (reqError) {
+          vscode.window.showErrorMessage(
+            `Failed to get service request details: ${reqError}`
+          );
           return;
         }
 
-        this._panel.webview.postMessage({
-          command: "showServiceDetails",
-          serviceType: serviceType,
-          requestDetails: requestDetails,
-          responseDetails: responseDetails,
-        });
-      });
-    });
+        this._rosbridgeClient.getServiceResponseDetails(
+          serviceType,
+          (responseDetails, resError) => {
+            if (resError) {
+              vscode.window.showErrorMessage(
+                `Failed to get service response details: ${resError}`
+              );
+              return;
+            }
+
+            this._panel.webview.postMessage({
+              command: "showServiceDetails",
+              serviceType: serviceType,
+              requestDetails: requestDetails,
+              responseDetails: responseDetails,
+            });
+          }
+        );
+      }
+    );
   }
 
   inspectTopicMessageType(topicName) {
     this._rosbridgeClient.getTopics((topics) => {
-      const topic = topics.find(t => t.name === topicName);
+      const topic = topics.find((t) => t.name === topicName);
       if (topic) {
         this._inspectMessageType(topic.type);
       } else {
@@ -123,7 +139,7 @@ class MessageInspectorPanel {
   _inspectActionType(actionName) {
     this._panel.webview.postMessage({
       command: "showActionInspector",
-      actionName: actionName
+      actionName: actionName,
     });
   }
 
@@ -134,18 +150,22 @@ class MessageInspectorPanel {
     Promise.all([
       this._getMessageDetailsPromise(goalType),
       this._getMessageDetailsPromise(resultType),
-      this._getMessageDetailsPromise(feedbackType)
-    ]).then(([goalDetails, resultDetails, feedbackDetails]) => {
-      this._panel.webview.postMessage({
-        command: "showActionDetails",
-        actionType: actionType,
-        goalDetails: goalDetails,
-        resultDetails: resultDetails,
-        feedbackDetails: feedbackDetails
+      this._getMessageDetailsPromise(feedbackType),
+    ])
+      .then(([goalDetails, resultDetails, feedbackDetails]) => {
+        this._panel.webview.postMessage({
+          command: "showActionDetails",
+          actionType: actionType,
+          goalDetails: goalDetails,
+          resultDetails: resultDetails,
+          feedbackDetails: feedbackDetails,
+        });
+      })
+      .catch((error) => {
+        vscode.window.showErrorMessage(
+          `Failed to get action details: ${error}`
+        );
       });
-    }).catch(error => {
-      vscode.window.showErrorMessage(`Failed to get action details: ${error}`);
-    });
   }
 
   _getMessageDetailsPromise(messageType) {
@@ -166,93 +186,102 @@ class MessageInspectorPanel {
     this._panel.webview.postMessage({
       command: "showTemplate",
       messageType: messageType,
-      template: json
+      template: json,
     });
     vscode.env.clipboard.writeText(json).then(() => {
-      vscode.window.showInformationMessage(`Template for ${messageType} copied to clipboard!`);
+      vscode.window.showInformationMessage(
+        `Template for ${messageType} copied to clipboard!`
+      );
     });
   }
 
   _createMessageTemplate(definition) {
-    const mainType = Object.keys(definition).find(type => 
-      !type.includes('/') || type.split('/').pop() === Object.keys(definition)[0].split('/').pop()
-    ) || Object.keys(definition)[0];
-    
+    const mainType =
+      Object.keys(definition).find(
+        (type) =>
+          !type.includes("/") ||
+          type.split("/").pop() === Object.keys(definition)[0].split("/").pop()
+      ) || Object.keys(definition)[0];
+
     return this._createTemplateForType(mainType, definition);
   }
-  
+
   _createTemplateForType(typeName, definition) {
     const template = {};
     const typeDef = definition[typeName];
-    
+
     if (!typeDef || !typeDef.fields) {
       return template;
     }
-    
-    typeDef.fields.forEach(field => {
+
+    typeDef.fields.forEach((field) => {
       template[field.name] = this._getFieldValue(field.type, definition);
     });
-    
+
     return template;
   }
-  
+
   _getFieldValue(fieldType, definition) {
-    if (fieldType.endsWith('[]')) {
+    if (fieldType.endsWith("[]")) {
       const baseType = fieldType.slice(0, -2);
       if (definition[baseType] && !this._isPrimitiveType(baseType)) {
         return [this._createTemplateForType(baseType, definition)];
       }
       return [];
     }
-    
-    if (fieldType.startsWith('array(') || fieldType === 'array') {
+
+    if (fieldType.startsWith("array(") || fieldType === "array") {
       return [];
     }
-    
+
     const defaultValue = this._getDefaultValue(fieldType);
     if (defaultValue !== null) {
       return defaultValue;
     }
-    
+
     if (definition[fieldType]) {
       return this._createTemplateForType(fieldType, definition);
     }
-    
-    if (fieldType === 'float' || fieldType === 'double') {
+
+    if (fieldType === "float" || fieldType === "double") {
       return 0.0;
     }
-    if (fieldType.includes('int') || fieldType === 'byte' || fieldType === 'char') {
+    if (
+      fieldType.includes("int") ||
+      fieldType === "byte" ||
+      fieldType === "char"
+    ) {
       return 0;
     }
-    
+
     return {};
   }
 
   _getDefaultValue(fieldType) {
-    if (fieldType.endsWith('[]')) {
+    if (fieldType.endsWith("[]")) {
       return [];
     }
-    
+
     const typeDefaults = {
-      'bool': false,
-      'boolean': false,
-      'byte': 0,
-      'char': 0,
-      'int8': 0,
-      'uint8': 0,
-      'int16': 0,
-      'uint16': 0,
-      'int32': 0,
-      'uint32': 0,
-      'int64': 0,
-      'uint64': 0,
-      'float32': 0.0,
-      'float64': 0.0,
-      'float': 0.0,
-      'double': 0.0,
-      'string': '',
-      'time': { 'secs': 0, 'nsecs': 0 },
-      'duration': { 'secs': 0, 'nsecs': 0 }
+      bool: false,
+      boolean: false,
+      byte: 0,
+      char: 0,
+      int8: 0,
+      uint8: 0,
+      int16: 0,
+      uint16: 0,
+      int32: 0,
+      uint32: 0,
+      int64: 0,
+      uint64: 0,
+      float32: 0.0,
+      float64: 0.0,
+      float: 0.0,
+      double: 0.0,
+      string: "",
+      time: { secs: 0, nsecs: 0 },
+      duration: { secs: 0, nsecs: 0 },
     };
 
     if (typeDefaults.hasOwnProperty(fieldType)) {
@@ -261,14 +290,28 @@ class MessageInspectorPanel {
 
     return null;
   }
-  
+
   _isPrimitiveType(type) {
     const primitiveTypes = [
-      'bool', 'boolean', 'byte', 'char',
-      'int8', 'uint8', 'int16', 'uint16',
-      'int32', 'uint32', 'int64', 'uint64',
-      'float32', 'float64', 'float', 'double',
-      'string', 'time', 'duration'
+      "bool",
+      "boolean",
+      "byte",
+      "char",
+      "int8",
+      "uint8",
+      "int16",
+      "uint16",
+      "int32",
+      "uint32",
+      "int64",
+      "uint64",
+      "float32",
+      "float64",
+      "float",
+      "double",
+      "string",
+      "time",
+      "duration",
     ];
     return primitiveTypes.includes(type);
   }
@@ -308,7 +351,7 @@ class MessageInspectorPanel {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>ROS 2 Message/Service Inspector</title>
+        <title>Message/Service Inspector</title>
         <style>
             body {
                 font-family: var(--vscode-font-family);
@@ -525,7 +568,7 @@ class MessageInspectorPanel {
     </head>
     <body>
         <div class="header">
-            <h1>ROS 2 Message/Service Inspector</h1>
+            <h1>Message/Service Inspector</h1>
         </div>
         
         <div class="search-section">
@@ -904,7 +947,7 @@ class MessageInspectorPanel {
         </script>
     </body>
     </html>`;
-    
+
     return html;
   }
 }

@@ -110,7 +110,7 @@ function generateTimestamp() {
   return `${year}_${month}_${day}_${hours}_${minutes}_${seconds}`;
 }
 
-const extensionHandle = "ros2-studio";
+const extensionHandle = "eight-vectors-studio";
 
 module.exports = {
   validateAndFormatEndpoint,

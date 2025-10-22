@@ -58,7 +58,13 @@ module.exports = {
   plugins: [
     new CopyWebpackPlugin({
       patterns: [
-        { from: 'media', to: 'media' }
+        { 
+          from: 'media', 
+          to: 'media',
+          globOptions: {
+            ignore: ['**/.DS_Store']
+          }
+        }
       ]
     })
   ],

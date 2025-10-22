@@ -14,7 +14,7 @@ class BagRecorderPanel {
     } else {
       const panel = vscode.window.createWebviewPanel(
         "rosBagRecorder",
-        "ROS2 Bag Recorder",
+        "Bag Recorder",
         column || vscode.ViewColumn.One,
         {
           enableScripts: true,
@@ -48,8 +48,7 @@ class BagRecorderPanel {
     this._disposables = [];
     this._selectedTopics = new Map();
     this._currentCommand = null;
-    this._outputChannel =
-      vscode.window.createOutputChannel("ROS2 Bag Recorder");
+    this._outputChannel = vscode.window.createOutputChannel("Bag Recorder");
 
     if (BagRecorderPanel._pendingTopics) {
       BagRecorderPanel._pendingTopics.forEach((topic) => {
@@ -81,7 +80,6 @@ class BagRecorderPanel {
       null,
       this._disposables
     );
-
   }
 
   _addTopic(topicName, topicType) {
@@ -116,15 +114,13 @@ class BagRecorderPanel {
 
     const topics = Array.from(this._selectedTopics.keys());
     const command = this._constructBagCommand(null, topics);
-    
+
     this._currentCommand = command;
 
     this._outputChannel.clear();
-    this._outputChannel.appendLine("=== ROS2 Bag Recorder ===");
+    this._outputChannel.appendLine("=== Bag Recorder ===");
     this._outputChannel.appendLine("");
-    this._outputChannel.appendLine(
-      "Command to run on remote machine:"
-    );
+    this._outputChannel.appendLine("Command to run on remote machine:");
     this._outputChannel.appendLine("");
     this._outputChannel.appendLine(command);
     this._outputChannel.appendLine("");
@@ -136,7 +132,9 @@ class BagRecorderPanel {
       );
     });
     this._outputChannel.appendLine("");
-    this._outputChannel.appendLine("Note: You can add -o flag to specify output path");
+    this._outputChannel.appendLine(
+      "Note: You can add -o flag to specify output path"
+    );
     this._outputChannel.show();
 
     this._update();
@@ -155,7 +153,6 @@ class BagRecorderPanel {
 
     return command;
   }
-
 
   _browseOutputPath() {
     vscode.window
@@ -204,7 +201,6 @@ class BagRecorderPanel {
       });
   }
 
-
   _update() {
     this._panel.webview.html = this._getHtmlContent();
   }
@@ -217,7 +213,7 @@ class BagRecorderPanel {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>ROS2 Bag Recorder</title>
+        <title>Bag Recorder</title>
         <style>
             body {
                 font-family: var(--vscode-font-family);
@@ -506,7 +502,7 @@ class BagRecorderPanel {
     <body>
         <div class="container">
             <div class="header">
-                <h1>ROS2 Bag Recorder</h1>
+                <h1>Bag Recorder</h1>
             </div>
             
             <div class="section">
@@ -530,9 +526,7 @@ class BagRecorderPanel {
                                 <div class="topic-name">${topic.name}</div>
                                 <div class="topic-type">${topic.type}</div>
                             </div>
-                            <button class="remove-button" onclick="removeTopic('${
-                              topic.name
-                            }')">
+                            <button class="remove-button" onclick="removeTopic('${topic.name}')">
                                 Remove
                             </button>
                         </div>

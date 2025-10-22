@@ -33,7 +33,7 @@ class RosbridgeClient {
   }
 
   _getMaxReconnectAttempts() {
-    const config = vscode.workspace.getConfiguration("ros2-studio");
+    const config = vscode.workspace.getConfiguration("eight-vectors-studio");
     const attempts = config.get("maxReconnectAttempts", 10);
     return attempts === 0 ? Infinity : attempts;
   }
@@ -158,7 +158,7 @@ class RosbridgeClient {
 
     vscode.commands.executeCommand(
       "setContext",
-      "ros2-studio.isReconnecting",
+      "eight-vectors-studio.isReconnecting",
       true
     );
 
@@ -172,7 +172,7 @@ class RosbridgeClient {
       this.isReconnecting = false;
       vscode.commands.executeCommand(
         "setContext",
-        "ros2-studio.isReconnecting",
+        "eight-vectors-studio.isReconnecting",
         false
       );
       return;
@@ -212,7 +212,7 @@ class RosbridgeClient {
         this.isReconnecting = false;
         vscode.commands.executeCommand(
           "setContext",
-          "ros2-studio.isReconnecting",
+          "eight-vectors-studio.isReconnecting",
           false
         );
       }
@@ -1015,7 +1015,7 @@ class RosbridgeClient {
 
     vscode.commands.executeCommand(
       "setContext",
-      "ros2-studio.isReconnecting",
+      "eight-vectors-studio.isReconnecting",
       false
     );
 
@@ -1051,7 +1051,7 @@ class RosbridgeClient {
 
     vscode.commands.executeCommand(
       "setContext",
-      "ros2-studio.isReconnecting",
+      "eight-vectors-studio.isReconnecting",
       false
     );
 
