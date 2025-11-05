@@ -8,6 +8,8 @@ class RosbridgeClient {
     this.ros = null;
     this.topics = new Map();
     this.subscriptions = new Map();
+    this.actionClients = new Map();
+    this.actionGoals = new Map();
     this.connectionPromise = this.connect();
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = this._getMaxReconnectAttempts();
@@ -428,6 +430,113 @@ class RosbridgeClient {
         callback(null, error);
       }
     );
+  }
+
+  callActionGoal(actionName, actionType, goal, resultCallback, feedbackCallback, statusCallback) {
+    if (!this.ros || !this.ros.isConnected) {
+      this.pChannel.appendLine("No rosbridge connection available");
+      if (typeof resultCallback === "function") {
+        resultCallback(null, "No connection");
+      }
+      return null;
+    }
+
+    const clientKey = `${actionName}|${actionType}`;
+    let actionClient = this.actionClients.get(clientKey);
+    if (!actionClient) {
+      actionClient = new ROSLIB.ActionClient({
+        ros: this.ros,
+        serverName: actionName,
+        actionName: actionType,
+      });
+      this.actionClients.set(clientKey, actionClient);
+    }
+
+    const actionGoal = new ROSLIB.Goal({
+      actionClient: actionClient,
+      goalMessage: goal,
+    });
+
+    const goalKey = `${clientKey}|${Date.now()}|${Math.random().toString(36).slice(2, 10)}`;
+    this.actionGoals.set(goalKey, actionGoal);
+
+    const toJson = (obj) => {
+      try {
+        return JSON.stringify(obj, null, 2);
+      } catch (e) {
+        return String(obj);
+      }
+    };
+
+    this.pChannel.appendLine(
+      `[Action] Sending goal to ${actionName} (type: ${actionType})\n${toJson(goal)}`
+    );
+
+    if (typeof statusCallback === "function") {
+      try {
+        statusCallback({ text: "Goal sent" });
+      } catch (_) {}
+    }
+
+    actionGoal.on('feedback', (feedback) => {
+      this.pChannel.appendLine(`[Action] Feedback from ${actionName}:\n${toJson(feedback)}`);
+      if (typeof feedbackCallback === "function") {
+        try { feedbackCallback(feedback); } catch (_) {}
+      }
+    });
+
+    // Some versions of roslibjs emit a 'status' event per goal
+    if (typeof actionGoal.on === 'function') {
+      try {
+        actionGoal.on('status', (status) => {
+          this.pChannel.appendLine(`[Action] Status from ${actionName}:\n${toJson(status)}`);
+          if (typeof statusCallback === "function") {
+            try { statusCallback(status); } catch (_) {}
+          }
+        });
+      } catch (_) {
+        // Ignore if 'status' event not supported
+      }
+    }
+
+    actionGoal.on('result', (result) => {
+      this.pChannel.appendLine(`[Action] Result from ${actionName}:\n${toJson(result)}`);
+      this.actionGoals.delete(goalKey);
+      if (typeof resultCallback === "function") {
+        try { resultCallback(result, null); } catch (_) {}
+      }
+    });
+
+    actionGoal.on('error', (error) => {
+      const errMsg = this.formatError(error);
+      this.pChannel.appendLine(`[Action] Error from ${actionName}: ${errMsg}`);
+      this.actionGoals.delete(goalKey);
+      if (typeof resultCallback === "function") {
+        try { resultCallback(null, error); } catch (_) {}
+      }
+    });
+
+    actionGoal.send();
+    this.pChannel.appendLine(`[Action] Goal sent: ${actionName}`);
+    return goalKey;
+  }
+
+  cancelAction(goalKey) {
+    const goal = this.actionGoals.get(goalKey);
+    if (!goal) {
+      return false;
+    }
+    try {
+      if (typeof goal.cancel === 'function') {
+        goal.cancel();
+      }
+      this.pChannel.appendLine(`[Action] Cancel requested for goal ${goalKey}`);
+      this.actionGoals.delete(goalKey);
+      return true;
+    } catch (e) {
+      this.pChannel.appendLine(`Failed to cancel action: ${e}`);
+      return false;
+    }
   }
 
   isConnected() {
@@ -899,6 +1008,90 @@ class RosbridgeClient {
     });
 
     responseService.callService(
+      request,
+      (result) => {
+        const details = this._parseMessageDefinition(result.typedefs || []);
+        callback(details, null);
+      },
+      (error) => {
+        callback(null, error);
+      }
+    );
+  }
+
+  getActionGoalDetails(actionType, callback) {
+    if (!this.ros || !this.ros.isConnected) {
+      callback(null, "No connection");
+      return;
+    }
+
+    const service = new ROSLIB.Service({
+      ros: this.ros,
+      name: "/rosapi/action_goal_details",
+      serviceType: "rosapi_msgs/srv/ActionGoalDetails",
+    });
+
+    const request = new ROSLIB.ServiceRequest({
+      type: actionType,
+    });
+
+    service.callService(
+      request,
+      (result) => {
+        const details = this._parseMessageDefinition(result.typedefs || []);
+        callback(details, null);
+      },
+      (error) => {
+        callback(null, error);
+      }
+    );
+  }
+
+  getActionResultDetails(actionType, callback) {
+    if (!this.ros || !this.ros.isConnected) {
+      callback(null, "No connection");
+      return;
+    }
+
+    const service = new ROSLIB.Service({
+      ros: this.ros,
+      name: "/rosapi/action_result_details",
+      serviceType: "rosapi_msgs/srv/ActionResultDetails",
+    });
+
+    const request = new ROSLIB.ServiceRequest({
+      type: actionType,
+    });
+
+    service.callService(
+      request,
+      (result) => {
+        const details = this._parseMessageDefinition(result.typedefs || []);
+        callback(details, null);
+      },
+      (error) => {
+        callback(null, error);
+      }
+    );
+  }
+
+  getActionFeedbackDetails(actionType, callback) {
+    if (!this.ros || !this.ros.isConnected) {
+      callback(null, "No connection");
+      return;
+    }
+
+    const service = new ROSLIB.Service({
+      ros: this.ros,
+      name: "/rosapi/action_feedback_details",
+      serviceType: "rosapi_msgs/srv/ActionFeedbackDetails",
+    });
+
+    const request = new ROSLIB.ServiceRequest({
+      type: actionType,
+    });
+
+    service.callService(
       request,
       (result) => {
         const details = this._parseMessageDefinition(result.typedefs || []);

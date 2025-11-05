@@ -1203,7 +1203,8 @@ function activate(context) {
             if (MessageInspectorPanel.currentPanel) {
               if (treeItem.messageType) {
                 MessageInspectorPanel.currentPanel._inspectMessageType(
-                  treeItem.messageType
+                  treeItem.messageType,
+                  topicName
                 );
               } else {
                 MessageInspectorPanel.currentPanel.inspectTopicMessageType(
@@ -1576,7 +1577,8 @@ function activate(context) {
                   return;
                 }
                 MessageInspectorPanel.currentPanel._inspectServiceType(
-                  serviceType
+                  serviceType,
+                  serviceName
                 );
               });
             }
@@ -1597,6 +1599,31 @@ function activate(context) {
           setTimeout(() => {
             if (MessageInspectorPanel.currentPanel) {
               MessageInspectorPanel.currentPanel._inspectActionType(actionName);
+            }
+          }, 500);
+        }
+      ),
+      vscode.commands.registerCommand(
+        `${extensionHandle}.inspect-action`,
+        async (actionName, actionType) => {
+          if (!actionName) {
+            vscode.window.showErrorMessage("No action selected");
+            return;
+          }
+
+          if (!ws || !ws.isConnected()) {
+            vscode.window.showErrorMessage("Not connected to rosbridge");
+            return;
+          }
+
+          MessageInspectorPanel.createOrShow(context.extensionUri, ws);
+          setTimeout(() => {
+            if (MessageInspectorPanel.currentPanel) {
+              if (actionType) {
+                MessageInspectorPanel.currentPanel.inspectActionWithType(actionType, actionName);
+              } else {
+                MessageInspectorPanel.currentPanel._inspectActionType(actionName);
+              }
             }
           }, 500);
         }
