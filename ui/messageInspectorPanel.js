@@ -46,7 +46,7 @@ class MessageInspectorPanel {
       this._disposables
     );
 
-    this.currentActionGoalId = null;
+    // Action client invocation is currently unsupported.
 
     this._panel.webview.onDidReceiveMessage(
       (message) => {
@@ -73,12 +73,7 @@ class MessageInspectorPanel {
           case "callService":
             this._callService(message.serviceName, message.serviceType, message.request);
             break;
-          case "callAction":
-            this._callAction(message.actionName, message.actionType, message.goal);
-            break;
-          case "cancelAction":
-            this._cancelAction();
-            break;
+          // Action client invocation is currently unsupported.
           case "publishTopic":
             this._publishTopic(message.topicName, message.messageType, message.messageData);
             break;
@@ -183,85 +178,7 @@ class MessageInspectorPanel {
     }
   }
 
-  _callAction(actionName, actionType, goal) {
-    try {
-      const goalObj = JSON.parse(goal);
-      const goalId = this._rosbridgeClient.callActionGoal(
-        actionName, 
-        actionType, 
-        goalObj, 
-        (result, error) => {
-          this.currentActionGoalId = null;
-          this._panel.webview.postMessage({
-            command: "hideActionCancel"
-          });
-          
-          if (error) {
-            vscode.window.showErrorMessage(`Action call failed: ${error}`);
-            this._panel.webview.postMessage({
-              command: "showActionResponse",
-              success: false,
-              error: error
-            });
-            return;
-          }
-
-          vscode.window.showInformationMessage(`Action ${actionName} completed successfully`);
-          this._panel.webview.postMessage({
-            command: "showActionResponse",
-            success: true,
-            result: result
-          });
-        },
-        (feedback) => {
-          // Handle feedback
-          this._panel.webview.postMessage({
-            command: "showActionFeedback",
-            feedback: feedback
-          });
-        },
-        (status) => {
-          // Handle status
-          this._panel.webview.postMessage({
-            command: "showActionStatus",
-            status: status
-          });
-        }
-      );
-      
-      if (goalId) {
-        this.currentActionGoalId = goalId;
-        this._panel.webview.postMessage({
-          command: "showActionCancel"
-        });
-      }
-    } catch (error) {
-      vscode.window.showErrorMessage(`Invalid JSON goal: ${error.message}`);
-      this._panel.webview.postMessage({
-        command: "showActionResponse",
-        success: false,
-        error: `Invalid JSON: ${error.message}`
-      });
-    }
-  }
-
-  _cancelAction() {
-    if (this.currentActionGoalId) {
-      const cancelled = this._rosbridgeClient.cancelAction(this.currentActionGoalId);
-      if (cancelled) {
-        vscode.window.showInformationMessage("Action cancelled");
-        this._panel.webview.postMessage({
-          command: "showActionResponse",
-          success: false,
-          error: "Action cancelled by user"
-        });
-        this._panel.webview.postMessage({
-          command: "hideActionCancel"
-        });
-      }
-      this.currentActionGoalId = null;
-    }
-  }
+  // Action client invocation is currently unsupported.
 
   _publishTopic(topicName, messageType, messageData) {
     try {
@@ -811,7 +728,6 @@ class MessageInspectorPanel {
             <div class="tabs">
                 <button class="tab active" onclick="switchTab('message')">Messages</button>
                 <button class="tab" onclick="switchTab('service')">Services</button>
-                <button class="tab" onclick="switchTab('action')">Actions</button>
             </div>
             
             <div id="messageSearch" class="search-container">
@@ -824,10 +740,6 @@ class MessageInspectorPanel {
                 <button onclick="inspectService()">Inspect Service</button>
             </div>
             
-            <div id="actionSearch" class="search-container" style="display: none;">
-                <input type="text" id="actionTypeInput" placeholder="Enter action type (e.g., example_interfaces/action/Fibonacci)" />
-                <button onclick="inspectAction()">Inspect Action</button>
-            </div>
         </div>
         
         <div id="results"></div>
@@ -845,14 +757,11 @@ class MessageInspectorPanel {
                 
                 document.getElementById('messageSearch').style.display = 'none';
                 document.getElementById('serviceSearch').style.display = 'none';
-                document.getElementById('actionSearch').style.display = 'none';
                 
                 if (tab === 'message') {
                     document.getElementById('messageSearch').style.display = 'flex';
                 } else if (tab === 'service') {
                     document.getElementById('serviceSearch').style.display = 'flex';
-                } else if (tab === 'action') {
-                    document.getElementById('actionSearch').style.display = 'flex';
                 }
                 
                 document.getElementById('results').innerHTML = '';
@@ -1119,9 +1028,7 @@ class MessageInspectorPanel {
                 if (e.key === 'Enter') inspectService();
             });
             
-            document.getElementById('actionTypeInput').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') inspectAction();
-            });
+            // Action tab removed; no handler for actionTypeInput
             
             function renderActionDefinition(actionType, actionName, goalDetails, resultDetails, feedbackDetails) {
                 let html = '<div class="definition-container">';
@@ -1174,30 +1081,7 @@ class MessageInspectorPanel {
                 
                 html += '</div>';
                 
-                // Add Call Action section
-                html += '<div id="actionCallSection" class="template-container" style="margin-top: 20px;">';
-                html += '<div class="template-header">';
-                html += '<span class="template-title">Call Action</span>';
-                html += '</div>';
-                html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">';
-                html += '<div>';
-                html += '<div style="font-size: 0.9em; color: var(--vscode-descriptionForeground); margin-bottom: 4px;">Action Server Name</div>';
-                html += '<input type="text" id="actionServerNameInput" placeholder="e.g., /fibonacci" value="' + (actionName || '') + '" />';
-                html += '</div>';
-                html += '<div>';
-                html += '<div style="font-size: 0.9em; color: var(--vscode-descriptionForeground); margin-bottom: 4px;">Action Type</div>';
-                html += '<input type="text" id="actionTypeCallInput" placeholder="e.g., example_interfaces/action/Fibonacci" value="' + actionType + '" />';
-                html += '</div>';
-                html += '</div>';
-                html += '<textarea id="actionGoalInput" class="json-input" placeholder="Enter action goal JSON here...">{}</textarea>';
-                html += '<div style="margin-top: 10px; display: flex; gap: 10px;">';
-                html += '<button class="template-button" onclick="callAction()">Call Action</button>';
-                html += '<button id="cancelActionButton" class="template-button" onclick="cancelAction()" style="display: none; background: var(--vscode-errorForeground);">Cancel Action</button>';
-                html += '</div>';
-                html += '<div id="actionStatus" style="margin-top: 15px;"></div>';
-                html += '<div id="actionFeedback" style="margin-top: 15px;"></div>';
-                html += '<div id="actionResponse" style="margin-top: 15px;"></div>';
-                html += '</div>';
+                // Action client invocation is currently unsupported.
                 
                 window.currentActionType = actionType;
                 window.currentActionName = actionName || actionType;
@@ -1244,50 +1128,7 @@ class MessageInspectorPanel {
                 });
             }
             
-            function callAction() {
-                const goalInput = document.getElementById('actionGoalInput');
-                const responseDiv = document.getElementById('actionResponse');
-                const feedbackDiv = document.getElementById('actionFeedback');
-                const statusDiv = document.getElementById('actionStatus');
-                const serverInput = document.getElementById('actionServerNameInput');
-                const typeInput = document.getElementById('actionTypeCallInput');
-                
-                if (!goalInput || !serverInput || !typeInput) {
-                    responseDiv.innerHTML = '<div class="response-container response-error">Action inputs not available</div>';
-                    return;
-                }
-                
-                const serverName = serverInput.value.trim() || window.currentActionName;
-                const actionType = typeInput.value.trim() || window.currentActionType;
-                
-                if (!serverName || !actionType) {
-                    responseDiv.innerHTML = '<div class="response-container response-error">Please provide server name and action type</div>';
-                    return;
-                }
-                
-                const goal = goalInput.value.trim();
-                if (!goal) {
-                    responseDiv.innerHTML = '<div class="response-container response-error">Please enter a goal JSON</div>';
-                    return;
-                }
-                
-                responseDiv.innerHTML = '<div class="response-container">Calling action...</div>';
-                feedbackDiv.innerHTML = '';
-                statusDiv.innerHTML = '';
-                
-                vscode.postMessage({
-                    command: 'callAction',
-                    actionName: serverName,
-                    actionType: actionType,
-                    goal: goal
-                });
-            }
-            
-            function cancelAction() {
-                vscode.postMessage({
-                    command: 'cancelAction'
-                });
-            }
+            // Action client invocation is currently unsupported.
             
             window.addEventListener('message', event => {
                 const message = event.data;
@@ -1310,21 +1151,7 @@ class MessageInspectorPanel {
                     case 'showServiceResponse':
                         handleServiceResponse(message);
                         break;
-                    case 'showActionResponse':
-                        handleActionResponse(message);
-                        break;
-                    case 'showActionFeedback':
-                        handleActionFeedback(message);
-                        break;
-                    case 'showActionStatus':
-                        handleActionStatus(message);
-                        break;
-                    case 'showActionCancel':
-                        showCancelButton();
-                        break;
-                    case 'hideActionCancel':
-                        hideCancelButton();
-                        break;
+                    // Action client invocation is currently unsupported.
                     case 'showPublishResponse':
                         handlePublishResponse(message);
                         break;
@@ -1347,59 +1174,7 @@ class MessageInspectorPanel {
                 }
             }
             
-            function handleActionResponse(message) {
-                const responseDiv = document.getElementById('actionResponse');
-                if (!responseDiv) return;
-                
-                if (message.success) {
-                    const resultJson = JSON.stringify(message.result, null, 2);
-                    responseDiv.innerHTML = '<div class="response-container response-success">' +
-                        '<strong>Action Result:</strong><br><pre style="margin-top: 5px;">' + resultJson + '</pre>' +
-                        '</div>';
-                } else {
-                    responseDiv.innerHTML = '<div class="response-container response-error">' +
-                        '<strong>Error:</strong> ' + (message.error || 'Unknown error') +
-                        '</div>';
-                }
-            }
-            
-            function handleActionFeedback(message) {
-                const feedbackDiv = document.getElementById('actionFeedback');
-                if (!feedbackDiv) return;
-                
-                const feedbackJson = JSON.stringify(message.feedback, null, 2);
-                const feedbackHtml = '<div class="feedback-container">' +
-                    '<strong>Feedback:</strong><pre style="margin: 5px 0 0 0;">' + feedbackJson + '</pre>' +
-                    '</div>';
-                
-                feedbackDiv.innerHTML += feedbackHtml;
-            }
-            
-            function handleActionStatus(message) {
-                const statusDiv = document.getElementById('actionStatus');
-                if (!statusDiv) return;
-                
-                const statusText = message.status.text || 'Status: ' + message.status.status;
-                const statusHtml = '<div class="feedback-container" style="border-left-color: var(--vscode-notificationsWarningIcon-foreground);">' +
-                    '<strong>Status:</strong> ' + statusText +
-                    '</div>';
-                
-                statusDiv.innerHTML = statusHtml;
-            }
-            
-            function showCancelButton() {
-                const cancelBtn = document.getElementById('cancelActionButton');
-                if (cancelBtn) {
-                    cancelBtn.style.display = 'block';
-                }
-            }
-            
-            function hideCancelButton() {
-                const cancelBtn = document.getElementById('cancelActionButton');
-                if (cancelBtn) {
-                    cancelBtn.style.display = 'none';
-                }
-            }
+            // Action client invocation is currently unsupported.
             
             function publishTopic() {
                 const messageInput = document.getElementById('publishMessageInput');

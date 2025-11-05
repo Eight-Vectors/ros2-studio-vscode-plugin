@@ -106,18 +106,6 @@ class Service extends vscode.TreeItem {
   }
 }
 
-class ActionClient extends vscode.TreeItem {
-  constructor(label, nodeLabel, address, collapsibleState, command = null) {
-    super(label, collapsibleState);
-    this.nodeLabel = nodeLabel;
-    this.address = address;
-    this.command = command;
-    this.contextValue = "actionClient";
-    this.iconPath = new vscode.ThemeIcon("run-all");
-  }
-}
-
-
 class NodeListProvider {
   constructor(bridgeAddress, extHandle, channel) {
     this._onDidChangeTreeData = new vscode.EventEmitter();
@@ -161,8 +149,6 @@ class NodeListProvider {
           return this.getSubscribers(element);
         case "service_clients":
           return this.getServiceClients(element);
-        case "action_clients":
-          return this.getActionClients(element);
         default:
           return Promise.resolve([]);
       }
@@ -274,7 +260,7 @@ class NodeListProvider {
 
   getTopics(node) {
     if (this.rosbridgeClient && this.rosbridgeClient.isConnected()) {
-      const categories = ["publishers", "subscribers", "service_clients", "action_clients"];
+      const categories = ["publishers", "subscribers", "service_clients"];
       return categories.map(
         (label) =>
           new Topic(label, node, vscode.TreeItemCollapsibleState.Collapsed)
@@ -410,30 +396,7 @@ class NodeListProvider {
     }
   }
 
-  async getActionClients(topic) {
-    if (this.rosbridgeClient && this.rosbridgeClient.isConnected()) {
-      return new Promise((resolve) => {
-        const nodeName = topic.node.label;
-        
-        this.rosbridgeClient.getNodeDetails(nodeName, (details) => {
-          const actionClients = details.action_clients || [];
-          
-          const actionClientItems = actionClients.map((actionName) => {
-            return new ActionClient(
-              actionName,
-              nodeName,
-              topic.node.address,
-              vscode.TreeItemCollapsibleState.None
-            );
-          });
-          
-          resolve(actionClientItems);
-        });
-      });
-    } else {
-      return [];
-    }
-  }
+  // Action clients list intentionally unsupported currently.
 }
 
 module.exports = {

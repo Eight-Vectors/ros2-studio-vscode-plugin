@@ -111,6 +111,18 @@ Connect to ROS 2 systems via rosbridge WebSocket protocol directly from VS Code.
 
 ![Topic Visualization](https://eight-vectors.github.io/ros2-studio-extension-assets/gifs/topic-visualization.gif)
 
+### Publishing a Topic
+
+Use the topic publishing flow to send messages with a JSON payload to a selected topic.
+
+![Publish Topic](https://eight-vectors.github.io/ros2-studio-extension-assets/gifs/publishing-topic.gif)
+
+### Calling a Service
+
+Trigger a ROS 2 service call by providing the request JSON and view the response inline.
+
+![Call Service](https://eight-vectors.github.io/ros2-studio-extension-assets/gifs/calling-service.gif)
+
 ### Supported Visualization Types
 
 | Message Type             | Visualization | Description                              |

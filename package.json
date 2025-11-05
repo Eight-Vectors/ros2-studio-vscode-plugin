@@ -2,7 +2,7 @@
   "name": "eight-vectors-studio",
   "displayName": "Eight Vectors Studio",
   "description": "Connect to ROS 2 systems via rosbridge, visualize topics, call services, and interact with ROS 2 nodes directly from VS Code",
-  "version": "0.3.8",
+  "version": "0.4.0",
   "publisher": "eightvectors",
   "icon": "media/evs-logo.png",
   "galleryBanner": {

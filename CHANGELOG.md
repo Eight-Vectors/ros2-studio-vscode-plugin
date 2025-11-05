@@ -3,6 +3,19 @@
 All notable changes to **Eight Vectors Studio** are documented here. This project follows [Keep a Changelog](http://keepachangelog.com/) and [Semantic Versioning](https://semver.org/).
 
 
+## [0.4.0] – Topic Publishing and Service Calling
+
+### Added
+
+- Topic publishing flow with JSON payload editing
+- Service calling workflow with request/response display
+
+### Docs
+
+- Added README demos for publishing topics and calling services
+
+---
+
 ## [0.3.8] – Metadata Update
 
 ### Changed
